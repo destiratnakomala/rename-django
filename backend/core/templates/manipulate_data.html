@@ -1,51 +1,63 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2 class="mb-4">Manipulate Data</h2>
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-lg">
+                <div class="card-header bg-primary text-white text-center">
+                    <h2>Manipulate Data</h2>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="manipulate-form" enctype="multipart/form-data" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Select CSV Files to Manipulate:</label>
+                            <div class="form-check">
+                                {% for file in uploaded_files %}
+                                    <div class="mb-2">
+                                        <input class="form-check-input" type="checkbox" name="files" value="{{ file }}" id="file_{{ forloop.counter }}" onchange="updateColumns()" required>
+                                        <label class="form-check-label" for="file_{{ forloop.counter }}">
+                                            {{ file }}
+                                        </label>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            <div class="invalid-feedback">
+                                Please select at least one file.
+                            </div>
+                        </div>
 
-    <form method="post" id="manipulate-form" enctype="multipart/form-data" class="needs-validation" novalidate>
-        {% csrf_token %}
-        
-        <div class="mb-3">
-            <label class="form-label">Select CSV Files to Manipulate:</label>
-            <div class="form-check">
-                {% for file in uploaded_files %}
-                    <input class="form-check-input" type="checkbox" name="files" value="{{ file }}" id="file_{{ forloop.counter }}" onchange="updateColumns()" required>
-                    <label class="form-check-label" for="file_{{ forloop.counter }}">
-                        {{ file }}
-                    </label>
-                {% endfor %}
-            </div>
-            <div class="invalid-feedback">
-                Please select at least one file.
+                        <div class="mb-4" id="join-column-container" style="display: none;">
+                            <label class="form-label fw-bold">Join Column:</label>
+                            <select id="join-column" name="join_column" class="form-select" required>
+                                <option value="">Select a column</option>
+                            </select>
+                            <div class="invalid-feedback">
+                                Please select a join column.
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="button" id="manipulate-button" class="btn btn-primary btn-lg" disabled>Manipulate</button>
+                        </div>
+                    </form>
+
+                    {% if manipulated_result %}
+                        <div class="mt-5">
+                            <h3 class="text-center">Manipulated Result:</h3>
+                            <div class="table-responsive mt-3">
+                                <div class="table-container">
+                                    {{ manipulated_result|safe }}
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
             </div>
         </div>
-
-        <div class="mb-3">
-            <label class="form-label">Join Column:</label>
-            <select id="join-column" name="join_column" class="form-select" required>
-                <option value="">Select a column</option>
-                {% for column in common_columns %}
-                    <option value="{{ column }}">{{ column }}</option>
-                {% endfor %}
-            </select>
-            <div class="invalid-feedback">
-                Please select a join column.
-            </div>
-        </div>
-        
-        <button type="submit" class="btn btn-primary">Manipulate</button>
-    </form>
-
-    {% if manipulated_result %}
-        <h3 class="mt-4">Manipulated Result:</h3>
-        <div class="table-responsive">
-            <div class="table-container">
-                {{ manipulated_result|safe }}
-            </div>
-        </div>
-    {% endif %}
+    </div>
 </div>
 
 <script>
@@ -65,18 +77,35 @@
         .then(response => response.json())
         .then(data => {
             const joinColumnSelect = document.getElementById('join-column');
+            const joinColumnContainer = document.getElementById('join-column-container');
             joinColumnSelect.innerHTML = '<option value="">Select a column</option>';  // Clear existing options
             
             // Populate join column dropdown with common columns
-            data.common_columns.forEach(column => {
-                const option = document.createElement('option');
-                option.value = column;
-                option.textContent = column;
-                joinColumnSelect.appendChild(option);
-            });
+            if (data.common_columns.length > 0) {
+                data.common_columns.forEach(column => {
+                    const option = document.createElement('option');
+                    option.value = column;
+                    option.textContent = column;
+                    joinColumnSelect.appendChild(option);
+                });
+                joinColumnContainer.style.display = 'block';  // Show the join column select
+                document.getElementById('manipulate-button').disabled = false;  // Enable the manipulate button
+            } else {
+                joinColumnContainer.style.display = 'none';  // Hide the join column select if no common columns
+                document.getElementById('manipulate-button').disabled = true;  // Disable the manipulate button
+            }
         })
         .catch(error => console.error('Error:', error));
     }
+
+    document.getElementById('manipulate-button').addEventListener('click', function() {
+        const form = document.getElementById('manipulate-form');
+        if (form.checkValidity()) {
+            form.submit();  // Submit the form if it's valid
+        } else {
+            form.classList.add('was-validated');  // Trigger validation feedback
+        }
+    });
 
     // Enable Bootstrap validation styles
     (function () {

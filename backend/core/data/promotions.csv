@@ -1,0 +1,6 @@
+promotion_id,promotion_name,discount_percentage,start_date,end_date
+1,Promo 1,22,2023-01-01,2023-01-08
+2,Promo 2,28,2023-01-08,2023-01-15
+3,Promo 3,21,2023-01-15,2023-01-22
+4,Promo 4,14,2023-01-22,2023-01-29
+5,Promo 5,21,2023-01-29,2023-02-05
