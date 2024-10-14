@@ -1,4 +1,5 @@
 import csv
+import json
 import os
 import pandas as pd
 from django.contrib.auth import login, authenticate
@@ -8,7 +9,8 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import logout
 from django.conf import settings
 from .forms import UploadFileForm
-from django.http import HttpResponseBadRequest
+from django.http import HttpResponseBadRequest, HttpResponse, JsonResponse
+
 
 def home(request):
     return render(request, 'home.html')
@@ -117,3 +119,72 @@ def view_file_contents(request, selected_files):
             file_contents[filename] = df.to_html(classes='table table-bordered', index=False)  # Store contents
         except Exception as e:
             file_contents[filename] = f"Error reading file: {str(e)}"  # Store error message
+
+
+@login_required
+def manipulate_data(request):
+    # Directory where uploaded files are stored
+    upload_directory = os.path.join(settings.MEDIA_ROOT)
+    
+    # Get the list of uploaded CSV files
+    uploaded_files = [f for f in os.listdir(upload_directory) if f.endswith('.csv')]
+    
+    common_columns = []
+    manipulated_result = None
+
+    if request.method == 'POST' and 'join_column' in request.POST:
+        selected_files = request.POST.getlist('files')  # Get selected file names
+        join_column = request.POST.get('join_column')    # Get the selected join column
+
+        # Read the selected CSV files into DataFrames
+        dataframes = []
+        for file in selected_files:
+            file_path = os.path.join(upload_directory, file)
+            df = pd.read_csv(file_path)
+            dataframes.append(df)
+
+        # Perform manipulation if there's at least one common column and a join column selected
+        if join_column in common_columns and len(selected_files) > 1:
+            # Example manipulation: merging all DataFrames on the join column
+            merged_df = dataframes[0]
+            for df in dataframes[1:]:
+                merged_df = merged_df.merge(df, on=join_column, how='outer')
+
+            # Convert manipulated DataFrame to HTML
+            manipulated_result = merged_df.to_html(classes='table table-striped', index=False)
+
+    context = {
+        'uploaded_files': uploaded_files,
+        'common_columns': common_columns,
+        'manipulated_result': manipulated_result,
+    }
+    return render(request, 'manipulate_data.html', context)
+
+@login_required
+def get_common_columns(request):
+    if request.method == 'POST':
+        body = json.loads(request.body)
+        selected_files = body.get('files', [])
+        upload_directory = os.path.join(settings.MEDIA_ROOT)
+
+        
+        dataframes = []
+        
+        # Read the selected CSV files into DataFrames
+        for file in selected_files:
+            file_path = os.path.join(upload_directory, file)
+            df = pd.read_csv(file_path)
+            dataframes.append(df)
+
+        # Find common columns
+        if dataframes:
+            common_columns = set(dataframes[0].columns)
+            for df in dataframes[1:]:
+                common_columns.intersection_update(df.columns)
+            common_columns = list(common_columns)  # Convert set back to list
+        else:
+            common_columns = []
+
+        return JsonResponse({'common_columns': common_columns})
+
+    return JsonResponse({'common_columns': []}, status=400)
