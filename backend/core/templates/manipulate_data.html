@@ -17,7 +17,7 @@
                             <div class="form-check">
                                 {% for file in uploaded_files %}
                                     <div class="mb-2">
-                                        <input class="form-check-input" type="checkbox" name="files" value="{{ file }}" id="file_{{ forloop.counter }}" onchange="updateColumns()" required>
+                                        <input class="form-check-input" type="checkbox" name="files" value="{{ file }}" id="file_{{ forloop.counter }}" onchange="updateColumns()">
                                         <label class="form-check-label" for="file_{{ forloop.counter }}">
                                             {{ file }}
                                         </label>
@@ -40,7 +40,7 @@
                         </div>
 
                         <div class="d-grid gap-2">
-                            <button type="button" id="manipulate-button" class="btn btn-primary btn-lg" disabled>Manipulate</button>
+                            <button type="button" id="manipulate-button" class="btn btn-primary btn-lg" disabled>Proceed to Manipulate</button>
                         </div>
                     </form>
 
@@ -65,37 +65,43 @@
         // Gather selected files
         const selectedFiles = Array.from(document.querySelectorAll('input[name="files"]:checked')).map(input => input.value);
 
-        // Make AJAX call to fetch common columns
-        fetch('{% url "get_common_columns" %}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token }}'
-            },
-            body: JSON.stringify({ files: selectedFiles })
-        })
-        .then(response => response.json())
-        .then(data => {
-            const joinColumnSelect = document.getElementById('join-column');
-            const joinColumnContainer = document.getElementById('join-column-container');
-            joinColumnSelect.innerHTML = '<option value="">Select a column</option>';  // Clear existing options
-            
-            // Populate join column dropdown with common columns
-            if (data.common_columns.length > 0) {
-                data.common_columns.forEach(column => {
-                    const option = document.createElement('option');
-                    option.value = column;
-                    option.textContent = column;
-                    joinColumnSelect.appendChild(option);
-                });
-                joinColumnContainer.style.display = 'block';  // Show the join column select
-                document.getElementById('manipulate-button').disabled = false;  // Enable the manipulate button
-            } else {
-                joinColumnContainer.style.display = 'none';  // Hide the join column select if no common columns
-                document.getElementById('manipulate-button').disabled = true;  // Disable the manipulate button
-            }
-        })
-        .catch(error => console.error('Error:', error));
+        if (selectedFiles.length > 0) {
+            // Make AJAX call to fetch common columns only if files are selected
+            fetch('{% url "get_common_columns" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ files: selectedFiles })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const joinColumnSelect = document.getElementById('join-column');
+                const joinColumnContainer = document.getElementById('join-column-container');
+                joinColumnSelect.innerHTML = '<option value="">Select a column</option>';  // Clear existing options
+
+                // Populate join column dropdown with common columns
+                if (data.common_columns.length > 0) {
+                    data.common_columns.forEach(column => {
+                        const option = document.createElement('option');
+                        option.value = column;
+                        option.textContent = column;
+                        joinColumnSelect.appendChild(option);
+                    });
+                    joinColumnContainer.style.display = 'block';  // Show the join column select
+                    document.getElementById('manipulate-button').disabled = false;  // Enable the manipulate button
+                } else {
+                    joinColumnContainer.style.display = 'none';  // Hide the join column select if no common columns
+                    document.getElementById('manipulate-button').disabled = true;  // Disable the manipulate button if no common columns
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        } else {
+            // If no files are selected, disable the button and hide the join column
+            document.getElementById('join-column-container').style.display = 'none';
+            document.getElementById('manipulate-button').disabled = true;
+        }
     }
 
     document.getElementById('manipulate-button').addEventListener('click', function() {

@@ -136,6 +136,14 @@ def manipulate_data(request):
         selected_files = request.POST.getlist('files')  # Get selected file names
         join_column = request.POST.get('join_column')  # Get the selected join column
 
+
+        if len(selected_files) < 2:
+            # Return an error message or handle the case where less than 2 files are selected
+            return render(request, 'manipulate_data.html', {
+                'uploaded_files': uploaded_files,
+                'error': 'Please select at least two files for manipulation.'
+            })
+
         # Read the selected CSV files into DataFrames
         dataframes = []
         for file in selected_files:
@@ -156,8 +164,16 @@ def manipulate_data(request):
             for df in dataframes[1:]:
                 merged_df = merged_df.merge(df, on=join_column, how='outer')
 
+
+
+            #save file into result folder
+            manipulation_path_file = os.path.join(settings.BASE_DIR, 'core/static/result/manipulation_result.csv')
+
+            merged_df.to_csv(manipulation_path_file, index=False)
             # Convert manipulated DataFrame to HTML
             manipulated_result = merged_df.to_html(classes='table table-striped', index=False)
+            
+
 
     context = {
         'uploaded_files': uploaded_files,

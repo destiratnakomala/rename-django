@@ -4,15 +4,23 @@
 
 {% block content %}
 <div class="container mt-5">
-    <h2>Upload CSV File</h2>
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        <div class="form-group">
-            <label for="file">Choose CSV file:</label>
-            <input type="file" class="form-control-file" name="file" id="file" required>
+    <h2 class="text-center mb-4">Upload CSV File</h2>
+    <div class="card">
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="file" class="form-label">Choose CSV file:</label>
+                    <input type="file" class="form-control" name="file" id="file" accept=".csv" required>
+                </div>
+                <div class="text-center">
+                    <button type="submit" class="btn btn-primary">Upload</button>
+                </div>
+            </form>
+            <div class="text-center mt-3">
+                <a class="btn btn-link" href="{% url 'view_files' %}">View Uploaded Files</a>
+            </div>
         </div>
-        <button type="submit" class="btn btn-primary">Upload</button>
-    </form>
-    <a class="btn btn-link mt-3" href="{% url 'view_files' %}">View Uploaded Files</a>
+    </div>
 </div>
 {% endblock %}
