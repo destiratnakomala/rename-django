@@ -38,12 +38,11 @@
         <button type="submit" class="btn btn-primary">Manipulate</button>
     </form>
 
-    <!-- Ensure this block is only shown when there's manipulated data -->
     {% if manipulated_result %}
         <h3 class="mt-4">Manipulated Result:</h3>
         <div class="table-responsive">
             <div class="table-container">
-                {{ manipulated_result|safe }}  <!-- Render the DataFrame HTML table safely -->
+                {{ manipulated_result|safe }}
             </div>
         </div>
     {% endif %}
@@ -51,7 +50,7 @@
 
 <script>
     function updateColumns() {
-        // Fetch selected files
+        // Gather selected files
         const selectedFiles = Array.from(document.querySelectorAll('input[name="files"]:checked')).map(input => input.value);
 
         // Make AJAX call to fetch common columns
@@ -67,8 +66,8 @@
         .then(data => {
             const joinColumnSelect = document.getElementById('join-column');
             joinColumnSelect.innerHTML = '<option value="">Select a column</option>';  // Clear existing options
-
-            // Populate the join column dropdown with common columns
+            
+            // Populate join column dropdown with common columns
             data.common_columns.forEach(column => {
                 const option = document.createElement('option');
                 option.value = column;

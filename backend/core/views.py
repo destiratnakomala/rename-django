@@ -125,16 +125,16 @@ def view_file_contents(request, selected_files):
 def manipulate_data(request):
     # Directory where uploaded files are stored
     upload_directory = os.path.join(settings.MEDIA_ROOT)
-    
+
     # Get the list of uploaded CSV files
     uploaded_files = [f for f in os.listdir(upload_directory) if f.endswith('.csv')]
     
     common_columns = []
     manipulated_result = None
 
-    if request.method == 'POST' and 'join_column' in request.POST:
+    if request.method == 'POST':
         selected_files = request.POST.getlist('files')  # Get selected file names
-        join_column = request.POST.get('join_column')    # Get the selected join column
+        join_column = request.POST.get('join_column')  # Get the selected join column
 
         # Read the selected CSV files into DataFrames
         dataframes = []
@@ -143,9 +143,15 @@ def manipulate_data(request):
             df = pd.read_csv(file_path)
             dataframes.append(df)
 
-        # Perform manipulation if there's at least one common column and a join column selected
-        if join_column in common_columns and len(selected_files) > 1:
-            # Example manipulation: merging all DataFrames on the join column
+        # Find common columns only if there are selected files
+        if dataframes:
+            common_columns = set(dataframes[0].columns)
+            for df in dataframes[1:]:
+                common_columns.intersection_update(df.columns)
+            common_columns = list(common_columns)  # Convert set back to list
+
+        # Perform manipulation if join column is selected and is in common columns
+        if join_column in common_columns:
             merged_df = dataframes[0]
             for df in dataframes[1:]:
                 merged_df = merged_df.merge(df, on=join_column, how='outer')
@@ -158,7 +164,11 @@ def manipulate_data(request):
         'common_columns': common_columns,
         'manipulated_result': manipulated_result,
     }
+
+
     return render(request, 'manipulate_data.html', context)
+
+
 
 @login_required
 def get_common_columns(request):
