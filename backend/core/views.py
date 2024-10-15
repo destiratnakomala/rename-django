@@ -121,6 +121,45 @@ def view_file_contents(request, selected_files):
             file_contents[filename] = f"Error reading file: {str(e)}"  # Store error message
 
 
+
+
+
+@login_required
+def data_submission(request):
+    upload_dir = os.path.join(settings.BASE_DIR, 'core/static/uploads/')
+    files = os.listdir(upload_dir)
+    file_contents = {}
+
+    # Always initialize the form
+    form = UploadFileForm()
+
+    if request.method == 'POST':
+        # Handle file upload
+        if 'file' in request.FILES:
+            form = UploadFileForm(request.POST, request.FILES)
+            if form.is_valid():
+                handle_uploaded_file(request.FILES['file'])
+                return redirect('data_submission')  # Reload the page after upload
+
+        # Handle file viewing
+        elif 'files' in request.POST:
+            selected_files = request.POST.getlist('files')
+            for filename in selected_files:
+                file_path = os.path.join(upload_dir, filename)
+                if os.path.exists(file_path):
+                    try:
+                        df = pd.read_csv(file_path)
+                        file_contents[filename] = df.to_html(classes='table table-bordered', index=False)
+                    except Exception as e:
+                        file_contents[filename] = f"Error reading file: {str(e)}"
+
+    return render(request, 'data_submission.html', {
+        'form': form,
+        'files': files,
+        'file_contents': file_contents
+    })
+
+
 @login_required
 def manipulate_data(request):
     # Directory where uploaded files are stored

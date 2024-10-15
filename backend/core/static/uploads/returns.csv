@@ -1,0 +1,121 @@
+return_id,order_id,return_reason,return_date
+1,1,Wrong Item,2023-01-05
+2,2,No Longer Needed,2023-01-06
+3,3,Wrong Item,2023-01-07
+4,4,Wrong Item,2023-01-08
+5,5,No Longer Needed,2023-01-09
+6,6,Defective,2023-01-10
+7,7,No Longer Needed,2023-01-11
+8,8,No Longer Needed,2023-01-12
+9,9,Wrong Item,2023-01-13
+10,10,Wrong Item,2023-01-14
+11,11,Wrong Item,2023-01-15
+12,12,Wrong Item,2023-01-16
+13,13,No Longer Needed,2023-01-17
+14,14,Defective,2023-01-18
+15,15,Defective,2023-01-19
+16,16,Defective,2023-01-20
+17,17,Defective,2023-01-21
+18,18,Wrong Item,2023-01-22
+19,19,No Longer Needed,2023-01-23
+20,20,Wrong Item,2023-01-24
+21,21,Wrong Item,2023-01-25
+22,22,No Longer Needed,2023-01-26
+23,23,No Longer Needed,2023-01-27
+24,24,No Longer Needed,2023-01-28
+25,25,Wrong Item,2023-01-29
+26,26,Defective,2023-01-30
+27,27,Wrong Item,2023-01-31
+28,28,Wrong Item,2023-02-01
+29,29,No Longer Needed,2023-02-02
+30,30,Wrong Item,2023-02-03
+31,31,Defective,2023-02-04
+32,32,Defective,2023-02-05
+33,33,Wrong Item,2023-02-06
+34,34,No Longer Needed,2023-02-07
+35,35,Wrong Item,2023-02-08
+36,36,Defective,2023-02-09
+37,37,Defective,2023-02-10
+38,38,Wrong Item,2023-02-11
+39,39,Defective,2023-02-12
+40,40,Wrong Item,2023-02-13
+41,41,Defective,2023-02-14
+42,42,No Longer Needed,2023-02-15
+43,43,Defective,2023-02-16
+44,44,Wrong Item,2023-02-17
+45,45,Wrong Item,2023-02-18
+46,46,No Longer Needed,2023-02-19
+47,47,Defective,2023-02-20
+48,48,Wrong Item,2023-02-21
+49,49,Defective,2023-02-22
+50,50,No Longer Needed,2023-02-23
+51,51,Wrong Item,2023-02-24
+52,52,No Longer Needed,2023-02-25
+53,53,Wrong Item,2023-02-26
+54,54,Defective,2023-02-27
+55,55,Wrong Item,2023-02-28
+56,56,No Longer Needed,2023-03-01
+57,57,Wrong Item,2023-03-02
+58,58,No Longer Needed,2023-03-03
+59,59,Wrong Item,2023-03-04
+60,60,No Longer Needed,2023-03-05
+61,61,Defective,2023-03-06
+62,62,Wrong Item,2023-03-07
+63,63,Defective,2023-03-08
+64,64,Wrong Item,2023-03-09
+65,65,Wrong Item,2023-03-10
+66,66,Defective,2023-03-11
+67,67,No Longer Needed,2023-03-12
+68,68,Defective,2023-03-13
+69,69,Defective,2023-03-14
+70,70,Wrong Item,2023-03-15
+71,71,No Longer Needed,2023-03-16
+72,72,No Longer Needed,2023-03-17
+73,73,Defective,2023-03-18
+74,74,Defective,2023-03-19
+75,75,No Longer Needed,2023-03-20
+76,76,Defective,2023-03-21
+77,77,Wrong Item,2023-03-22
+78,78,Wrong Item,2023-03-23
+79,79,Defective,2023-03-24
+80,80,Wrong Item,2023-03-25
+81,81,No Longer Needed,2023-03-26
+82,82,Defective,2023-03-27
+83,83,Wrong Item,2023-03-28
+84,84,Defective,2023-03-29
+85,85,No Longer Needed,2023-03-30
+86,86,Wrong Item,2023-03-31
+87,87,No Longer Needed,2023-04-01
+88,88,Defective,2023-04-02
+89,89,Defective,2023-04-03
+90,90,Wrong Item,2023-04-04
+91,91,No Longer Needed,2023-04-05
+92,92,Defective,2023-04-06
+93,93,No Longer Needed,2023-04-07
+94,94,No Longer Needed,2023-04-08
+95,95,Wrong Item,2023-04-09
+96,96,No Longer Needed,2023-04-10
+97,97,Defective,2023-04-11
+98,98,Defective,2023-04-12
+99,99,Wrong Item,2023-04-13
+100,100,No Longer Needed,2023-04-14
+101,101,Defective,2023-04-15
+102,102,Defective,2023-04-16
+103,103,Wrong Item,2023-04-17
+104,104,No Longer Needed,2023-04-18
+105,105,No Longer Needed,2023-04-19
+106,106,No Longer Needed,2023-04-20
+107,107,Defective,2023-04-21
+108,108,Defective,2023-04-22
+109,109,Wrong Item,2023-04-23
+110,110,Defective,2023-04-24
+111,111,Wrong Item,2023-04-25
+112,112,Wrong Item,2023-04-26
+113,113,No Longer Needed,2023-04-27
+114,114,Wrong Item,2023-04-28
+115,115,No Longer Needed,2023-04-29
+116,116,No Longer Needed,2023-04-30
+117,117,Defective,2023-05-01
+118,118,Defective,2023-05-02
+119,119,Wrong Item,2023-05-03
+120,120,Wrong Item,2023-05-04

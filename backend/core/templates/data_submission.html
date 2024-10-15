@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block title %}Data Submission{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="text-center mb-4">Data Submission</h2>
+    
+    <!-- Upload Form -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                {{ form.as_p }}  <!-- Render the form fields -->
+                <div class="text-center mt-3">
+                    <button type="submit" class="btn btn-primary">Upload</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Uploaded Files List -->
+    <h3>Uploaded Files</h3>
+    <form method="post">
+        {% csrf_token %}
+        <ul class="list-group mb-4">
+            {% for file in files %}
+                <li class="list-group-item">
+                    <input type="checkbox" name="files" value="{{ file }}" id="{{ file }}">
+                    <label for="{{ file }}">{{ file }}</label>
+                </li>
+            {% endfor %}
+        </ul>
+        <button type="submit" class="btn btn-primary mt-3">View Selected Files</button>
+    </form>
+
+    <!-- Display Selected File Contents -->
+    {% if file_contents %}
+        <h3 class="mt-4">Selected File Contents</h3>
+        {% for filename, contents in file_contents.items %}
+            <h4>{{ filename }}</h4>
+            <div style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; margin-bottom: 20px;">
+                {{ contents|safe }}
+            </div>
+            <hr>
+        {% endfor %}
+    {% endif %}
+</div>
+{% endblock %}

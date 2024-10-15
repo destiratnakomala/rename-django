@@ -36,6 +36,7 @@ orders_df.to_csv('orders.csv', index=False)
 
 # Generate sample supply data
 supply_data = {
+    'order_id': range(1, num_products + 1),
     'supply_id': range(1, num_products + 1),
     'product_id': products_df['product_id'],
     'supplier_name': [f'Supplier {i}' for i in range(1, num_products + 1)],
@@ -50,6 +51,7 @@ supply_df.to_csv('supply.csv', index=False)
 # Generate sample customer data
 num_customers = 20
 customer_data = {
+    'order_id': range(1, num_customers + 1),
     'customer_id': range(1, num_customers + 1),
     'customer_name': [f'Customer {i}' for i in range(1, num_customers + 1)],
     'email': [f'customer{i}@example.com' for i in range(1, num_customers + 1)],
@@ -64,7 +66,7 @@ customers_df.to_csv('customers.csv', index=False)
 # Generate sample shipping data
 shipping_data = {
     'shipping_id': range(1, num_orders + 1),
-    'order_id': orders_df['order_id'],
+    'order_id': range(1, num_orders + 1),
     'shipping_date': pd.date_range(start='2023-01-02', periods=num_orders, freq='D'),
     'shipping_method': np.random.choice(['Standard', 'Express'], num_orders),
     'tracking_number': [f'TRACK-{i}' for i in range(1, num_orders + 1)],
@@ -78,7 +80,7 @@ shipping_df.to_csv('shipping.csv', index=False)
 # Generate sample payment data
 payment_data = {
     'payment_id': range(1, num_orders + 1),
-    'order_id': orders_df['order_id'],
+    'order_id': range(1, num_orders + 1),
     'payment_method': np.random.choice(['Credit Card', 'PayPal', 'Bank Transfer'], num_orders),
     'amount': orders_df['quantity'] * products_df['price'].iloc[orders_df['product_id'] - 1].values,
     'payment_date': pd.date_range(start='2023-01-01', periods=num_orders, freq='D'),
@@ -102,13 +104,15 @@ returns_df = pd.DataFrame(returns_data)
 # Save returns DataFrame to CSV
 returns_df.to_csv('returns.csv', index=False)
 
-# Generate sample promotions data
+num_promotions = 100  # Match this to the number of other fields like promotion_id, promotion_name, etc.
+
 promotions_data = {
-    'promotion_id': range(1, 6),
-    'promotion_name': [f'Promo {i}' for i in range(1, 6)],
-    'discount_percentage': np.random.randint(5, 30, 5),
-    'start_date': pd.date_range(start='2023-01-01', periods=5, freq='W'),
-    'end_date': pd.date_range(start='2023-01-08', periods=5, freq='W'),
+    'order_id': np.random.choice(range(1, num_orders + 1), num_promotions, replace=False),  # Randomly select 5 orders for promotion
+    'promotion_id': range(1, num_promotions + 1),
+    'promotion_name': [f'Promo {i}' for i in range(1, num_promotions + 1)],
+    'discount_percentage': np.random.randint(5, 30, num_promotions),
+    'start_date': pd.date_range(start='2023-01-01', periods=num_promotions, freq='W'),
+    'end_date': pd.date_range(start='2023-01-08', periods=num_promotions, freq='W'),
 }
 
 # Create DataFrame for promotions
@@ -118,6 +122,7 @@ promotions_df.to_csv('promotions.csv', index=False)
 
 # Generate sample inventory data
 inventory_data = {
+    'order_id': range(1, num_products + 1),
     'inventory_id': range(1, num_products + 1),
     'product_id': products_df['product_id'],
     'stock_level': np.random.randint(0, 50, num_products),
@@ -132,7 +137,7 @@ inventory_df.to_csv('inventory.csv', index=False)
 # Generate sample sales data
 sales_data = {
     'sales_id': range(1, num_orders + 1),
-    'order_id': orders_df['order_id'],
+    'order_id': range(1, num_orders + 1),
     'total_amount': orders_df['quantity'] * products_df['price'].iloc[orders_df['product_id'] - 1].values,
     'sales_date': pd.date_range(start='2023-01-01', periods=num_orders, freq='D'),
 }
@@ -144,6 +149,7 @@ sales_df.to_csv('sales.csv', index=False)
 
 # Generate sample location data
 location_data = {
+    'order_id': range(1, num_customers + 1),
     'location_id': range(1, num_customers + 1),
     'customer_id': customers_df['customer_id'],
     'address': [f'Address {i}, City, Country' for i in range(1, num_customers + 1)],
