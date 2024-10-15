@@ -160,12 +160,12 @@ def data_submission(request):
     })
 
 
+
+
+
 @login_required
 def manipulate_data(request):
-    # Directory where uploaded files are stored
-    upload_directory = os.path.join(settings.MEDIA_ROOT)
-
-    # Get the list of uploaded CSV files
+    upload_directory = os.path.join(settings.BASE_DIR, 'core/static/uploads/')
     uploaded_files = [f for f in os.listdir(upload_directory) if f.endswith('.csv')]
     
     common_columns = []
@@ -174,10 +174,9 @@ def manipulate_data(request):
     if request.method == 'POST':
         selected_files = request.POST.getlist('files')  # Get selected file names
         join_column = request.POST.get('join_column')  # Get the selected join column
-
+        csv_name = request.POST.get('csv_name', 'join_result')  # Get the custom CSV name, default to 'join_result'
 
         if len(selected_files) < 2:
-            # Return an error message or handle the case where less than 2 files are selected
             return render(request, 'manipulate_data.html', {
                 'uploaded_files': uploaded_files,
                 'error': 'Please select at least two files for manipulation.'
@@ -203,16 +202,12 @@ def manipulate_data(request):
             for df in dataframes[1:]:
                 merged_df = merged_df.merge(df, on=join_column, how='outer')
 
+            # Save the result with the specified CSV name
+            result_csv_path = os.path.join(settings.BASE_DIR, 'core/static/result', f'{csv_name}.csv')
+            merged_df.to_csv(result_csv_path, index=False)
 
-
-            #save file into result folder
-            manipulation_path_file = os.path.join(settings.BASE_DIR, 'core/static/result/manipulation_result.csv')
-
-            merged_df.to_csv(manipulation_path_file, index=False)
             # Convert manipulated DataFrame to HTML
             manipulated_result = merged_df.to_html(classes='table table-striped', index=False)
-            
-
 
     context = {
         'uploaded_files': uploaded_files,
@@ -220,8 +215,8 @@ def manipulate_data(request):
         'manipulated_result': manipulated_result,
     }
 
-
     return render(request, 'manipulate_data.html', context)
+
 
 
 
