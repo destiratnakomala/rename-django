@@ -6,7 +6,7 @@
         <div class="col-lg-12">
             <div class="card shadow-lg">
                 <div class="card-header bg-primary text-white text-center">
-                    <h2>Manipulate Data</h2>
+                    <h2 class="mb-0">Manipulate Data</h2>
                 </div>
                 <div class="card-body">
                     <form method="post" id="manipulate-form" enctype="multipart/form-data" class="needs-validation" novalidate>
@@ -16,7 +16,7 @@
                             <label class="form-label fw-bold">Select CSV Files to Manipulate:</label>
                             <div class="form-check">
                                 {% for file in uploaded_files %}
-                                    <div class="mb-2">
+                                    <div class="form-check mb-2">
                                         <input class="form-check-input" type="checkbox" name="files" value="{{ file }}" id="file_{{ forloop.counter }}" onchange="updateColumns()">
                                         <label class="form-check-label" for="file_{{ forloop.counter }}">
                                             {{ file }}
@@ -39,6 +39,20 @@
                             </div>
                         </div>
 
+                        <div class="mb-4" id="join-type-container" style="display: none;">
+                            <label class="form-label fw-bold">Join Type:</label>
+                            <select name="join_type" class="form-select" required>
+                                <option value="inner">Inner Join</option>
+                                <option value="outer">Outer Join</option>
+                                <option value="left">Left Join</option>
+                                <option value="right">Right Join</option>
+                                <option value="concatenate">Concatenate</option>
+                            </select>
+                            <div class="invalid-feedback">
+                                Please select a join type.
+                            </div>
+                        </div>
+
                         <div class="mb-4">
                             <label class="form-label fw-bold">Result CSV Name:</label>
                             <input type="text" name="csv_name" class="form-control" placeholder="Enter the CSV name" required>
@@ -52,16 +66,18 @@
                         </div>
                     </form>
 
-                    {% if manipulated_result %}
-                        <div class="mt-5">
-                            <h3 class="text-center">Manipulated Result:</h3>
-                            <div class="table-responsive mt-3">
-                                <div class="table-container" style="max-height: 600px; overflow-y: auto;">
-                                    {{ manipulated_result|safe }}
-                                </div>
+                    <div class="mt-5">
+                        <h3 class="text-center">Manipulated Results:</h3>
+                        <div class="table-responsive mt-3">
+                            <div class="table-container" style="max-height: 600px; overflow-y: auto;">
+                                {% for result in manipulation_results %}
+                                    <h5 class="text-center">Result: {{ result.name }}</h5>
+                                    <div>{{ result.result|safe }}</div>
+                                    <hr>
+                                {% endfor %}
                             </div>
                         </div>
-                    {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
@@ -87,6 +103,8 @@
             .then(data => {
                 const joinColumnSelect = document.getElementById('join-column');
                 const joinColumnContainer = document.getElementById('join-column-container');
+                const joinTypeContainer = document.getElementById('join-type-container');
+                
                 joinColumnSelect.innerHTML = '<option value="">Select a column</option>';  // Clear existing options
 
                 // Populate join column dropdown with common columns
@@ -98,9 +116,11 @@
                         joinColumnSelect.appendChild(option);
                     });
                     joinColumnContainer.style.display = 'block';  // Show the join column select
+                    joinTypeContainer.style.display = 'block'; // Show the join type select
                     document.getElementById('manipulate-button').disabled = false;  // Enable the manipulate button
                 } else {
                     joinColumnContainer.style.display = 'none';  // Hide the join column select if no common columns
+                    joinTypeContainer.style.display = 'none'; // Hide the join type select if no common columns
                     document.getElementById('manipulate-button').disabled = true;  // Disable the manipulate button if no common columns
                 }
             })
@@ -108,6 +128,7 @@
         } else {
             // If no files are selected, disable the button and hide the join column
             document.getElementById('join-column-container').style.display = 'none';
+            document.getElementById('join-type-container').style.display = 'none'; // Hide join type if no files selected
             document.getElementById('manipulate-button').disabled = true;
         }
     }

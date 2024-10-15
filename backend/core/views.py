@@ -161,19 +161,18 @@ def data_submission(request):
 
 
 
-
-
 @login_required
 def manipulate_data(request):
     upload_directory = os.path.join(settings.BASE_DIR, 'core/static/uploads/')
     uploaded_files = [f for f in os.listdir(upload_directory) if f.endswith('.csv')]
     
     common_columns = []
-    manipulated_result = None
+    manipulation_results = []  # List to store multiple manipulation results
 
     if request.method == 'POST':
         selected_files = request.POST.getlist('files')  # Get selected file names
         join_column = request.POST.get('join_column')  # Get the selected join column
+        join_type = request.POST.get('join_type', 'outer')  # Get the selected join type
         csv_name = request.POST.get('csv_name', 'join_result')  # Get the custom CSV name, default to 'join_result'
 
         if len(selected_files) < 2:
@@ -196,11 +195,14 @@ def manipulate_data(request):
                 common_columns.intersection_update(df.columns)
             common_columns = list(common_columns)  # Convert set back to list
 
-        # Perform manipulation if join column is selected and is in common columns
+        # Perform manipulation based on selected join type
         if join_column in common_columns:
             merged_df = dataframes[0]
             for df in dataframes[1:]:
-                merged_df = merged_df.merge(df, on=join_column, how='outer')
+                if join_type == 'concatenate':
+                    merged_df = pd.concat([merged_df, df], ignore_index=True)
+                else:
+                    merged_df = merged_df.merge(df, on=join_column, how=join_type)
 
             # Save the result with the specified CSV name
             result_csv_path = os.path.join(settings.BASE_DIR, 'core/static/result', f'{csv_name}.csv')
@@ -209,10 +211,13 @@ def manipulate_data(request):
             # Convert manipulated DataFrame to HTML
             manipulated_result = merged_df.to_html(classes='table table-striped', index=False)
 
+            # Store the manipulation result with its name
+            manipulation_results.append({'name': csv_name, 'result': manipulated_result})
+
     context = {
         'uploaded_files': uploaded_files,
         'common_columns': common_columns,
-        'manipulated_result': manipulated_result,
+        'manipulation_results': manipulation_results,  # Pass all manipulation results to the template
     }
 
     return render(request, 'manipulate_data.html', context)
