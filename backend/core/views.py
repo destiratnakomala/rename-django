@@ -253,3 +253,21 @@ def get_common_columns(request):
         return JsonResponse({'common_columns': common_columns})
 
     return JsonResponse({'common_columns': []}, status=400)
+
+
+
+@login_required
+def view_manipulation_result(request):
+    result_dir = os.path.join(settings.BASE_DIR, 'core/static/result/')
+    results = [f for f in os.listdir(result_dir) if f.endswith('.csv')]
+
+    if request.method == 'POST':
+        selected_file = request.POST.get('selected_file')
+        if selected_file:
+            file_path = os.path.join(result_dir, selected_file)
+            if os.path.exists(file_path):
+                df = pd.read_csv(file_path)
+                file_contents = df.to_html(classes='table table-bordered', index=False)
+                return render(request, 'view_manipulation_result.html', {'file_contents': file_contents, 'results': results})
+
+    return render(request, 'view_manipulation_result.html', {'results': results})

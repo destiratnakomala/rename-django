@@ -1,8 +1,17 @@
 {% extends 'base.html' %}
 
-{% block title %}Home{% endblock %}
+{% block title %}Dashboard Home{% endblock %}
 
 {% block content %}
-<h1>Welcome to the Home Page</h1>
-<p>This is the main dashboard.</p>
+<div class="container mt-5">
+    <div class="row">
+        <div class="col text-center">
+            <h1 class="display-4">Welcome to the Dashboard</h1>
+            <p class="lead">Your main hub for data insights and analytics.</p>
+            <hr class="my-4">
+            <p>Navigate through the dashboard to manage data, view reports, and analyze performance.</p>
+            <a class="btn btn-primary btn-lg" href="#" role="button">Explore Features</a>
+        </div>
+    </div>
+</div>
 {% endblock %}

@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import home, register, user_login, user_logout, upload_file, view_files, view_file_contents, view_selected_files, manipulate_data, get_common_columns, data_submission
+from .views import home, register, user_login, user_logout, upload_file, view_files, view_file_contents, view_selected_files, manipulate_data, get_common_columns, data_submission,view_manipulation_result
 
 urlpatterns = [
     path('', home, name='home'),
@@ -11,4 +11,5 @@ urlpatterns = [
     path('data_submission', data_submission, name= 'data_submission'),
     path('manipulate_data/', manipulate_data, name= 'manipulate_data'), 
     path('get_common_columns/', get_common_columns, name='get_common_columns'),
+    path('view_manipulation_result/', view_manipulation_result, name= 'view_manipulation_result')
 ]

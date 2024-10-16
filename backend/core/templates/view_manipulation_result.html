@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h2 class="my-4 text-center">Manipulation Results</h2>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Select a Result File to View</h5>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="selected_file">Choose a file:</label>
+                    <select class="form-control" name="selected_file" id="selected_file" required>
+                        <option value="" disabled selected>Select a file</option>
+                        {% for result in results %}
+                            <option value="{{ result }}">{{ result }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary mt-3">View Result</button>
+            </form>
+        </div>
+    </div>
+
+    {% if file_contents %}
+    <div class="card">
+        <div class="card-header">
+            <h5>File Contents</h5>
+        </div>
+        <div class="card-body">
+            <div class="overflow-auto" style="max-height: 400px;">
+                {{ file_contents|safe }}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
