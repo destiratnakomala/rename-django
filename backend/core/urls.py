@@ -1,5 +1,8 @@
 from django.urls import path
-from .views import home, register, user_login, user_logout, upload_file, view_files, view_file_contents, view_selected_files, manipulate_data, get_common_columns, data_submission,view_manipulation_result, print_variables
+from .views import ( home, register, user_login, user_logout, upload_file, view_files, view_file_contents, view_selected_files, manipulate_data, get_common_columns, data_submission,view_manipulation_result 
+                    ,mongo_home
+                    
+    )
 
 urlpatterns = [
     path('', home, name='home'),
@@ -12,7 +15,10 @@ urlpatterns = [
     path('manipulate_data/', manipulate_data, name= 'manipulate_data'), 
     path('get_common_columns/', get_common_columns, name='get_common_columns'),
     path('view_manipulation_result/', view_manipulation_result, name= 'view_manipulation_result'),
-    path('print-variables/', print_variables, name='print_variables'),
+    path('mongo/', mongo_home, name='mongo_home'),
+
 ]
+
+
 
 

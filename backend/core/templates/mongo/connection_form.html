@@ -1,0 +1,13 @@
+<form method="POST">
+    {% csrf_token %}
+    <h2>Connect to MongoDB</h2>
+    <div>
+        {{ form.host.label }}: {{ form.host }}<br>
+        {{ form.port.label }}: {{ form.port }}<br>
+    </div>
+    <button type="submit">Connect</button>
+</form>
+
+{% if connection_error %}
+    <p style="color:red;">{{ connection_error }}</p>
+{% endif %}

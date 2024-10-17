@@ -6,6 +6,8 @@
     <title>{% block title %}My Django App{% endblock %}</title>
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+
 </head>
 <body>
 
@@ -22,6 +24,9 @@
                     {% if user.is_authenticated %}
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'home' %}">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'mongo_home' %}">Database Connection</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'data_submission' %}">Data Submission</a>

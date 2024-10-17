@@ -1,0 +1,11 @@
+<!-- templates/mongo/view_database.html -->
+{% if databases %}
+    <h4>MongoDB Databases</h4>
+    <ul>
+        {% for database in databases %}
+            <li>{{ database }}</li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>No databases found.</p>
+{% endif %}

@@ -1,0 +1,15 @@
+<!-- templates/mongo_home.html -->
+{% extends "base.html" %}
+
+{% block title %}
+    MongoDB Home
+{% endblock %}
+
+{% block content %}
+    <h3>Database Management Home</h3>
+
+    <div class="container">
+        {% include 'mongo/connection_form.html' %}  <!-- Include the connection form -->
+        {% include 'mongo/view_database.html' %}  
+    </div>
+{% endblock %}

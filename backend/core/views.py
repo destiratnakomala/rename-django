@@ -8,9 +8,15 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from django.contrib.auth import logout
 from django.conf import settings
-from .forms import UploadFileForm
 from django.http import HttpResponseBadRequest, HttpResponse, JsonResponse
 from django.http import JsonResponse
+from pymongo.errors import ConnectionFailure
+from pymongo import MongoClient
+from .forms import MongoDBConnectionForm, CreateDatabaseForm
+from .form import UploadFileForm
+
+
+
 
 def home(request):
     return render(request, 'home.html')
@@ -43,10 +49,68 @@ def user_login(request):
             return redirect('home')  # Redirect to home after login
     return render(request, 'login.html')
 
+
 @login_required
 def user_logout(request):
     logout(request)
     return redirect('home')
+
+# #----------------DATABASE CONNECTION MONGO------------------
+
+
+
+
+def connect_to_mongo(host, port):
+    """Establish a connection to the MongoDB server."""
+    try:
+        mongo_client = MongoClient(host, port)
+        mongo_client.admin.command('ping')
+        return mongo_client    
+    except ConnectionFailure:
+        return None
+
+
+
+
+@login_required
+def mongo_home(request):
+    """Render the MongoDB management home page."""
+    databases = []
+    connection_error = None
+
+    if request.method == 'POST':
+        form = MongoDBConnectionForm(request.POST)
+        if form.is_valid():
+            host = form.cleaned_data['host']
+            port = form.cleaned_data['port']
+
+
+            mongo_client = connect_to_mongo(host, port)
+            if mongo_client:
+                databases = mongo_client.list_database_names()
+                mongo_client.close()
+            else:
+                connection_error = "Failed to connect to MongoDB. Please check your credentials."
+
+    else:
+        form = MongoDBConnectionForm()
+
+    return render(request, 'mongo_home.html', {
+        'form': form,
+        'databases': databases,
+        'connection_error': connection_error,
+    })
+
+
+
+
+
+#------------------------DATABASE END 
+
+
+
+
+
 
 @login_required
 def upload_file(request):
@@ -347,7 +411,7 @@ def get_sort_columns(request):
 
 @login_required
 def view_manipulation_result(request):
-    result_dir = os.path.join(settings.BASE_DIR, 'core/static/result/')
+    result_dir= os.path.join(settings.MEDIA_ROOT, 'results/')
     results = [f for f in os.listdir(result_dir) if f.endswith('.csv')]
 
     if request.method == 'POST':
@@ -363,18 +427,3 @@ def view_manipulation_result(request):
 
 
 
-def print_variables(request):
-    # Define your variables
-    variable1 = "Hello, World!"
-    variable2 = 42
-    variable3 = [1, 2, 3]
-
-    # Create a dictionary of variables
-    context = {
-        'variable1': variable1,
-        'variable2': variable2,
-        'variable3': variable3,
-    }
-
-    # Return the variables as a JSON response
-    return JsonResponse(context)

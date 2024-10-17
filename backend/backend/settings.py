@@ -49,6 +49,10 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'django.template.context_processors.csrf',
+                'django.template.context_processors.static',
+                'django.template.context_processors.media',
+                # 'django.template.context_processors.settings', 
             ],
         },
     },
@@ -64,6 +68,15 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+# settings.py
+
+# MongoDB settings
+MONGO_DB_NAME = 'mydatabase'  # Replace with your database name
+MONGO_URI = 'mongodb://localhost:27017/'  # Default local connection URI
+
+
+
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [

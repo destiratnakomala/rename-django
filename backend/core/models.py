@@ -1,3 +1,5 @@
 from django.db import models
 
-# Create your models here.
+# Since we are using MongoDB, we won't use Django's ORM, but you can define models for structure
+class Collection(models.Model):
+    name = models.CharField(max_length=200)

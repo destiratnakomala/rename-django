@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}
+    Collections in {{ database }}
+{% endblock %}
+
+{% block content %}
+    <h1>Collections in Database: {{ database }}</h1>
+
+    <div class="container">
+        <ul>
+            {% if collections %}
+                {% for collection in collections %}
+                    <li>{{ collection }}</li>
+                {% endfor %}
+            {% else %}
+                <li>No collections found in this database.</li>
+            {% endif %}
+        </ul>
+        <a href="{% url 'mongo_home' %}">Back to MongoDB Home</a>
+    </div>
+{% endblock %}
