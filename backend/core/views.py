@@ -10,7 +10,7 @@ from django.contrib.auth import logout
 from django.conf import settings
 from .forms import UploadFileForm
 from django.http import HttpResponseBadRequest, HttpResponse, JsonResponse
-
+from django.http import JsonResponse
 
 def home(request):
     return render(request, 'home.html')
@@ -161,98 +161,187 @@ def data_submission(request):
 
 
 
+
+
 @login_required
 def manipulate_data(request):
-    upload_directory = os.path.join(settings.BASE_DIR, 'core/static/uploads/')
+    upload_directory = os.path.join(settings.MEDIA_ROOT, 'uploads/')
+    result_directory = os.path.join(settings.MEDIA_ROOT, 'results/')
+    os.makedirs(result_directory, exist_ok=True)
+    
     uploaded_files = [f for f in os.listdir(upload_directory) if f.endswith('.csv')]
     
     common_columns = []
+    sort_columns = []
     manipulation_results = []  # List to store multiple manipulation results
+    error = None  # To store any error messages
 
     if request.method == 'POST':
-        selected_files = request.POST.getlist('files')  # Get selected file names
+        selected_files = request.POST.getlist('files')
+        operation = request.POST.get('operation')  # Get selected operation
         join_column = request.POST.get('join_column')  # Get the selected join column
         join_type = request.POST.get('join_type', 'outer')  # Get the selected join type
-        csv_name = request.POST.get('csv_name', 'join_result')  # Get the custom CSV name, default to 'join_result'
+        sort_column = request.POST.get('sort_column')
+        ascending = request.POST.get('ascending', 'true')
+        csv_name = request.POST.get('csv_name', 'result')  # Get the custom CSV name, default to 'result'
 
-        if len(selected_files) < 2:
-            return render(request, 'manipulate_data.html', {
-                'uploaded_files': uploaded_files,
-                'error': 'Please select at least two files for manipulation.'
-            })
 
-        # Read the selected CSV files into DataFrames
-        dataframes = []
-        for file in selected_files:
-            file_path = os.path.join(upload_directory, file)
-            df = pd.read_csv(file_path)
-            dataframes.append(df)
 
-        # Find common columns only if there are selected files
-        if dataframes:
-            common_columns = set(dataframes[0].columns)
-            for df in dataframes[1:]:
-                common_columns.intersection_update(df.columns)
-            common_columns = list(common_columns)  # Convert set back to list
+        if operation == 'join':
+            if len(selected_files) < 2:
+                error = 'Please select at least two files for joining.'
+            else:
+                # Read the selected CSV files into DataFrames
+                dataframes = []
+                try:
+                    for file in selected_files:
+                        file_path = os.path.join(upload_directory, file)
+                        df = pd.read_csv(file_path)
+                        dataframes.append(df)
+                except Exception as e:
+                    error = f'Error reading {file}: {str(e)}'
+                
+                if not error:
+                    # Find common columns
+                    common_columns = set(dataframes[0].columns)
+                    for df in dataframes[1:]:
+                        common_columns.intersection_update(df.columns)
+                    common_columns = list(common_columns)  # Convert set back to list
 
-        # Perform manipulation based on selected join type
-        if join_column in common_columns:
-            merged_df = dataframes[0]
-            for df in dataframes[1:]:
-                if join_type == 'concatenate':
-                    merged_df = pd.concat([merged_df, df], ignore_index=True)
-                else:
-                    merged_df = merged_df.merge(df, on=join_column, how=join_type)
+                    if join_column and join_column in common_columns:
+                        try:
+                            merged_df = dataframes[0]
+                            for df in dataframes[1:]:
+                                if join_type == 'concatenate':
+                                    merged_df = pd.concat([merged_df, df], ignore_index=True)
+                                else:
+                                    merged_df = merged_df.merge(df, on=join_column, how=join_type)
+                            
+                            manipulated_result = merged_df.to_html(classes='table table-striped', index=False)
+                            # Save the result with the specified CSV name
+                            result_csv_path = os.path.join(result_directory, f'{csv_name}.csv')
+                            merged_df.to_csv(result_csv_path, index=False)
 
-            # Save the result with the specified CSV name
-            result_csv_path = os.path.join(settings.BASE_DIR, 'core/static/result', f'{csv_name}.csv')
-            merged_df.to_csv(result_csv_path, index=False)
+                            # Store the manipulation result with its name
+                            manipulation_results.append({'name': csv_name, 'result': manipulated_result})
+                        except Exception as e:
+                            error = f'Error during join operation: {str(e)}'
+                    else:
+                        error = 'Join column is invalid or not selected.'
+        
+        elif operation == 'sort' and len(selected_files)==1:
+            if len(selected_files) != 1:
+                error = 'Please select exactly one file for sorting.'
+            else:
+                selected_file = selected_files[0]
+                file_path = os.path.join(upload_directory, selected_file)
+                try:
+                    df = pd.read_csv(file_path)
+                    sort_columns = list(df.columns)
+                except Exception as e:
+                    error = f'Error reading {selected_file}: {str(e)}'
+                
+                if not error:
+                    if sort_column and sort_column in sort_columns:
+                        try:
+                            sorted_df = df.sort_values(by=sort_column, ascending=(ascending.lower() == 'true'))
+                            
+                            manipulated_result = sorted_df.to_html(classes='table table-striped', index=False)
 
-            # Convert manipulated DataFrame to HTML
-            manipulated_result = merged_df.to_html(classes='table table-striped', index=False)
+                            # Save the result with the specified CSV name
+                            result_csv_path = os.path.join(result_directory, f'{csv_name}.csv')
+                            sorted_df.to_csv(result_csv_path, index=False)
 
-            # Store the manipulation result with its name
-            manipulation_results.append({'name': csv_name, 'result': manipulated_result})
+                            # Store the manipulation result with its name
+                            manipulation_results.append({'name': csv_name, 'result': manipulated_result})
+                        except Exception as e:
+                            error = f'Error during sort operation: {str(e)}'
+                    else:
+                        error = 'Sort column is invalid or not selected.'
 
     context = {
         'uploaded_files': uploaded_files,
         'common_columns': common_columns,
+        'sort_columns': sort_columns,
         'manipulation_results': manipulation_results,  # Pass all manipulation results to the template
+        'error': error,  # Pass error messages to the template
     }
 
-    return render(request, 'manipulate_data.html', context)
 
+    return render(request, 'manipulate_data.html', context)
 
 
 
 @login_required
 def get_common_columns(request):
     if request.method == 'POST':
-        body = json.loads(request.body)
-        selected_files = body.get('files', [])
-        upload_directory = os.path.join(settings.MEDIA_ROOT)
+        try:
+            body = json.loads(request.body)
+            selected_files = body.get('files', [])
 
-        
-        dataframes = []
-        
-        # Read the selected CSV files into DataFrames
-        for file in selected_files:
-            file_path = os.path.join(upload_directory, file)
-            df = pd.read_csv(file_path)
-            dataframes.append(df)
+            if len(selected_files) < 2:
+                return JsonResponse({'common_columns': [], 'error': 'At least two files are required for join operation.'})
 
-        # Find common columns
-        if dataframes:
+            upload_directory = os.path.join(settings.MEDIA_ROOT, 'uploads/')
+            dataframes = []
+
+            # Read the selected CSV files into DataFrames
+            for file in selected_files:
+                file_path = os.path.join(upload_directory, file)
+                if not os.path.exists(file_path):
+                    return JsonResponse({'error': f'File {file} does not exist.'}, status=400)
+
+                try:
+                    df = pd.read_csv(file_path)
+                    dataframes.append(df)
+                except Exception as e:
+                    return JsonResponse({'error': f'Error reading {file}: {str(e)}'}, status=400)
+
+            # Compute common columns for join
             common_columns = set(dataframes[0].columns)
             for df in dataframes[1:]:
                 common_columns.intersection_update(df.columns)
-            common_columns = list(common_columns)  # Convert set back to list
-        else:
-            common_columns = []
+            common_columns = list(common_columns)
 
-        return JsonResponse({'common_columns': common_columns})
+            return JsonResponse({'common_columns': common_columns})
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON.'}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
 
     return JsonResponse({'common_columns': []}, status=400)
+
+@login_required
+def get_sort_columns(request):
+    if request.method == 'POST':
+        try:
+            body = json.loads(request.body)
+            selected_files = body.get('files', [])
+
+            if len(selected_files) != 1:
+                return JsonResponse({'sort_columns': [], 'error': 'Please select exactly one file for sorting.'})
+
+            upload_directory = os.path.join(settings.MEDIA_ROOT, 'uploads/')
+            file_path = os.path.join(upload_directory, selected_files[0])
+
+            if not os.path.exists(file_path):
+                return JsonResponse({'error': f'File {selected_files[0]} does not exist.'}, status=400)
+
+            try:
+                df = pd.read_csv(file_path)
+                sort_columns = list(df.columns)
+            except Exception as e:
+                return JsonResponse({'error': f'Error reading {selected_files[0]}: {str(e)}'}, status=400)
+
+            return JsonResponse({'sort_columns': sort_columns})
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON.'}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+    return JsonResponse({'sort_columns': []}, status=400)
+
+# ... (Other functions remain unchanged)
 
 
 
@@ -271,3 +360,21 @@ def view_manipulation_result(request):
                 return render(request, 'view_manipulation_result.html', {'file_contents': file_contents, 'results': results})
 
     return render(request, 'view_manipulation_result.html', {'results': results})
+
+
+
+def print_variables(request):
+    # Define your variables
+    variable1 = "Hello, World!"
+    variable2 = 42
+    variable3 = [1, 2, 3]
+
+    # Create a dictionary of variables
+    context = {
+        'variable1': variable1,
+        'variable2': variable2,
+        'variable3': variable3,
+    }
+
+    # Return the variables as a JSON response
+    return JsonResponse(context)

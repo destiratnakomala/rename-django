@@ -1,165 +1,220 @@
 {% extends 'base.html' %}
 
+{% load static %}
+
 {% block content %}
 <div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-12">
-            <div class="card shadow-lg">
-                <div class="card-header bg-primary text-white text-center">
-                    <h2 class="mb-0">Manipulate Data</h2>
+    <h2>Data Manipulation</h2>
+    
+    <!-- Display error messages if any -->
+    {% if error %}
+        <div class="alert alert-danger" role="alert">
+            {{ error }}
+        </div>
+    {% endif %}
+    
+    <!-- Manipulation Results -->
+    {% if manipulation_results %}
+        <div class="mt-4">
+            <h4>Manipulation Results:</h4>
+            {% for result in manipulation_results %}
+                <h5>{{ result.name }}</h5>
+                <div class="table-responsive">
+                    {{ result.result|safe }}
                 </div>
-                <div class="card-body">
-                    <form method="post" id="manipulate-form" enctype="multipart/form-data" class="needs-validation" novalidate>
-                        {% csrf_token %}
-                        
-                        <div class="mb-4">
-                            <label class="form-label fw-bold">Select CSV Files to Manipulate:</label>
-                            <div class="form-check">
-                                {% for file in uploaded_files %}
-                                    <div class="form-check mb-2">
-                                        <input class="form-check-input" type="checkbox" name="files" value="{{ file }}" id="file_{{ forloop.counter }}" onchange="updateColumns()">
-                                        <label class="form-check-label" for="file_{{ forloop.counter }}">
-                                            {{ file }}
-                                        </label>
-                                    </div>
-                                {% endfor %}
-                            </div>
-                            <div class="invalid-feedback">
-                                Please select at least one file.
-                            </div>
-                        </div>
-
-                        <div class="mb-4" id="join-column-container" style="display: none;">
-                            <label class="form-label fw-bold">Join Column:</label>
-                            <select id="join-column" name="join_column" class="form-select" required>
-                                <option value="">Select a column</option>
-                            </select>
-                            <div class="invalid-feedback">
-                                Please select a join column.
-                            </div>
-                        </div>
-
-                        <div class="mb-4" id="join-type-container" style="display: none;">
-                            <label class="form-label fw-bold">Join Type:</label>
-                            <select name="join_type" class="form-select" required>
-                                <option value="inner">Inner Join</option>
-                                <option value="outer">Outer Join</option>
-                                <option value="left">Left Join</option>
-                                <option value="right">Right Join</option>
-                                <option value="concatenate">Concatenate</option>
-                            </select>
-                            <div class="invalid-feedback">
-                                Please select a join type.
-                            </div>
-                        </div>
-
-                        <div class="mb-4">
-                            <label class="form-label fw-bold">Result CSV Name:</label>
-                            <input type="text" name="csv_name" class="form-control" placeholder="Enter the CSV name" required>
-                            <div class="invalid-feedback">
-                                Please enter a name for the CSV file.
-                            </div>
-                        </div>
-
-                        <div class="d-grid gap-2">
-                            <button type="button" id="manipulate-button" class="btn btn-primary btn-lg" disabled>Manipulate</button>
-                        </div>
-                    </form>
-
-                    <div class="mt-5">
-                        <div class="table-responsive mt-3">
-                            <div class="table-container" style="max-height: 600px; overflow-y: auto;">
-                                {% for result in manipulation_results %}
-                                    <h5 class="text-center">Result: {{ result.name }}</h5>
-                                    <div>{{ result.result|safe }}</div>
-                                    <hr>
-                                {% endfor %}
-                            </div>
-                        </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    
+    <form method="post" enctype="multipart/form-data" id="manipulateForm">
+        {% csrf_token %}
+        
+        <!-- File Selection -->
+        <div class="form-group">
+            <label for="files">Select CSV Files:</label>
+            <div>
+                {% for file in uploaded_files %}
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" name="files" id="file{{ forloop.counter }}" value="{{ file }}">
+                        <label class="form-check-label" for="file{{ forloop.counter }}">{{ file }}</label>
                     </div>
-                </div>
+                {% endfor %}
             </div>
         </div>
-    </div>
+        
+        <!-- Operation Selection -->
+        <div class="form-group mt-3">
+            <label for="operation">Select Operation:</label>
+            <select class="form-control" id="operation" name="operation" required>
+                <option value="">-- Select Operation --</option>
+                <option value="sort">Sort</option>
+                <option value="join">Join</option>
+            </select>
+        </div>
+        
+        <!-- Sort Options -->
+        <div id="sortOptions" class="mt-3" style="display: none;">
+            <div class="form-group">
+                <label for="sort_column">Select Sort Column:</label>
+                <select class="form-control" id="sort_column" name="sort_column">
+                    <option value="">-- Select Column --</option>
+                    {% for column in sort_columns %}
+                        <option value="{{ column }}">{{ column }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group mt-2">
+                <label for="ascending">Sort Order:</label>
+                <select class="form-control" id="ascending" name="ascending">
+                    <option value="true">Ascending</option>
+                    <option value="false">Descending</option>
+                </select>
+            </div>
+        </div>
+        
+        <!-- Join Options -->
+        <div id="joinOptions" class="mt-3" style="display: none;">
+            <div class="form-group">
+                <label for="join_column">Select Join Column:</label>
+                <select class="form-control" id="join_column" name="join_column">
+                    <option value="">-- Select Column --</option>
+                    {% for column in common_columns %}
+                        <option value="{{ column }}">{{ column }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group mt-2">
+                <label for="join_type">Select Join Type:</label>
+                <select class="form-control" id="join_type" name="join_type">
+                    <option value="inner">Inner</option>
+                    <option value="outer">Outer</option>
+                    <option value="left">Left</option>
+                    <option value="right">Right</option>
+                    <option value="concatenate">Concatenate</option>
+                </select>
+            </div>
+        </div>
+        
+        <!-- CSV Name -->
+        <div class="form-group mt-3">
+            <label for="csv_name">Resulting CSV Name:</label>
+            <input type="text" class="form-control" id="csv_name" name="csv_name" placeholder="Enter CSV name" required>
+        </div>
+        
+        <!-- Manipulate Button -->
+        <button type="submit" class="btn btn-primary mt-4">Manipulate</button>
+    </form>
 </div>
 
+<!-- JavaScript to handle dynamic form fields based on operation selection -->
 <script>
-    function updateColumns() {
-        // Gather selected files
-        const selectedFiles = Array.from(document.querySelectorAll('input[name="files"]:checked')).map(input => input.value);
-
-        if (selectedFiles.length > 0) {
-            // Make AJAX call to fetch common columns only if files are selected
-            fetch('{% url "get_common_columns" %}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': '{{ csrf_token }}'
-                },
-                body: JSON.stringify({ files: selectedFiles })
-            })
-            .then(response => response.json())
-            .then(data => {
-                const joinColumnSelect = document.getElementById('join-column');
-                const joinColumnContainer = document.getElementById('join-column-container');
-                const joinTypeContainer = document.getElementById('join-type-container');
+    document.addEventListener('DOMContentLoaded', function() {
+        const operationSelect = document.getElementById('operation');
+        const sortOptions = document.getElementById('sortOptions');
+        const joinOptions = document.getElementById('joinOptions');
+        const fileCheckboxes = document.querySelectorAll('input[name="files"]');
+        
+        function toggleOptions() {
+            const selectedOperation = operationSelect.value;
+            
+            if (selectedOperation === 'sort') {
+                sortOptions.style.display = 'block';
+                joinOptions.style.display = 'none';
                 
-                joinColumnSelect.innerHTML = '<option value="">Select a column</option>';  // Clear existing options
-
-                // Populate join column dropdown with common columns
-                if (data.common_columns.length > 0) {
-                    data.common_columns.forEach(column => {
-                        const option = document.createElement('option');
-                        option.value = column;
-                        option.textContent = column;
-                        joinColumnSelect.appendChild(option);
-                    });
-                    joinColumnContainer.style.display = 'block';  // Show the join column select
-                    joinTypeContainer.style.display = 'block'; // Show the join type select
-                    document.getElementById('manipulate-button').disabled = false;  // Enable the manipulate button
-                } else {
-                    joinColumnContainer.style.display = 'none';  // Hide the join column select if no common columns
-                    joinTypeContainer.style.display = 'none'; // Hide the join type select if no common columns
-                    document.getElementById('manipulate-button').disabled = true;  // Disable the manipulate button if no common columns
+                // Ensure only one file is selected for sort
+                fileCheckboxes.forEach(cb => {
+                    cb.disabled = false;
+                });
+            } else if (selectedOperation === 'join') {
+                sortOptions.style.display = 'none';
+                joinOptions.style.display = 'block';
+                
+                // Ensure at least two files are selected for join
+                fileCheckboxes.forEach(cb => {
+                    cb.disabled = false;
+                });
+            } else {
+                sortOptions.style.display = 'none';
+                joinOptions.style.display = 'none';
+                
+                // Enable all checkboxes
+                fileCheckboxes.forEach(cb => {
+                    cb.disabled = false;
+                });
+            }
+        }
+        
+        operationSelect.addEventListener('change', toggleOptions);
+        
+        // Optional: Add client-side validation before form submission
+        const form = document.getElementById('manipulateForm');
+        form.addEventListener('submit', function(event) {
+            const selectedOperation = operationSelect.value;
+            const selectedFiles = Array.from(fileCheckboxes).filter(cb => cb.checked);
+            
+            if (selectedOperation === 'sort') {
+                if (selectedFiles.length !== 1) {
+                    alert('Please select exactly one CSV file for sorting.');
+                    event.preventDefault();
+                    return;
                 }
-            })
-            .catch(error => console.error('Error:', error));
-        } else {
-            // If no files are selected, disable the button and hide the join column
-            document.getElementById('join-column-container').style.display = 'none';
-            document.getElementById('join-type-container').style.display = 'none'; // Hide join type if no files selected
-            document.getElementById('manipulate-button').disabled = true;
-        }
-    }
-
-    document.getElementById('manipulate-button').addEventListener('click', function() {
-        const form = document.getElementById('manipulate-form');
-        if (form.checkValidity()) {
-            form.submit();  // Submit the form if it's valid
-        } else {
-            form.classList.add('was-validated');  // Trigger validation feedback
-        }
+                
+                const sortColumn = document.getElementById('sort_column').value;
+                if (!sortColumn) {
+                    alert('Please select a sort column.');
+                    event.preventDefault();
+                    return;
+                }
+            } else if (selectedOperation === 'join') {
+                if (selectedFiles.length < 2) {
+                    alert('Please select at least two CSV files for joining.');
+                    event.preventDefault();
+                    return;
+                }
+                
+                const joinColumn = document.getElementById('join_column').value;
+                if (!joinColumn) {
+                    alert('Please select a join column.');
+                    event.preventDefault();
+                    return;
+                }
+            }
+        });
     });
-
-    // Enable Bootstrap validation styles
-    (function () {
-        'use strict'
-        const forms = document.querySelectorAll('.needs-validation')
-        Array.prototype.slice.call(forms)
-            .forEach(function (form) {
-                form.addEventListener('submit', function (event) {
-                    if (!form.checkValidity()) {
-                        event.preventDefault()
-                        event.stopPropagation()
-                    }
-                    form.classList.add('was-validated')
-                }, false)
-            })
-    })()
 </script>
-
-
-
 {% endblock %}
 
 
+// Assuming you have a function to handle the AJAX call
+function getColumns() {
+    // Send a POST request to your backend
+    fetch('/your-url/get-common-columns/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            files: selectedFileNames,  // Replace with your selected file names
+            operation: 'sort'  // Change based on your operation
+        }),
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Check for errors
+        if (data.error) {
+            console.error(data.error);
+            return;
+        }
+        // Populate the sort column dropdown
+        const sortColumnSelect = document.getElementById('sort-column-select'); // Adjust ID as needed
+        sortColumnSelect.innerHTML = '';  // Clear existing options
+
+        data.sort_columns.forEach(column => {
+            const option = document.createElement('option');
+            option.value = column;
+            option.textContent = column;
+            sortColumnSelect.appendChild(option);
+        });
+    })
+    .catch(error => console.error('Error:', error));
+}

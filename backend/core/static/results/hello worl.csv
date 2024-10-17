@@ -1,0 +1,21 @@
+order_id,customer_id_x,customer_name,email,phone,product_id,quantity,order_date,customer_id_y,status
+1,1,Customer 1,customer1@example.com,555-0101,6,4,2023-01-01,6,Shipped
+2,2,Customer 2,customer2@example.com,555-0102,37,4,2023-01-02,9,Shipped
+3,3,Customer 3,customer3@example.com,555-0103,1,3,2023-01-03,12,Cancelled
+4,4,Customer 4,customer4@example.com,555-0104,76,6,2023-01-04,15,Cancelled
+5,5,Customer 5,customer5@example.com,555-0105,35,3,2023-01-05,1,Delivered
+6,6,Customer 6,customer6@example.com,555-0106,70,4,2023-01-06,9,Cancelled
+7,7,Customer 7,customer7@example.com,555-0107,54,6,2023-01-07,20,Delivered
+8,8,Customer 8,customer8@example.com,555-0108,81,8,2023-01-08,7,Delivered
+9,9,Customer 9,customer9@example.com,555-0109,63,3,2023-01-09,11,Shipped
+10,10,Customer 10,customer10@example.com,555-0110,9,8,2023-01-10,20,Cancelled
+11,11,Customer 11,customer11@example.com,555-0111,62,2,2023-01-11,3,Shipped
+12,12,Customer 12,customer12@example.com,555-0112,2,7,2023-01-12,1,Cancelled
+13,13,Customer 13,customer13@example.com,555-0113,82,6,2023-01-13,20,Shipped
+14,14,Customer 14,customer14@example.com,555-0114,36,1,2023-01-14,15,Delivered
+15,15,Customer 15,customer15@example.com,555-0115,92,1,2023-01-15,1,Delivered
+16,16,Customer 16,customer16@example.com,555-0116,41,4,2023-01-16,20,Shipped
+17,17,Customer 17,customer17@example.com,555-0117,37,2,2023-01-17,7,Delivered
+18,18,Customer 18,customer18@example.com,555-0118,49,7,2023-01-18,2,Pending
+19,19,Customer 19,customer19@example.com,555-0119,26,7,2023-01-19,13,Shipped
+20,20,Customer 20,customer20@example.com,555-0120,68,8,2023-01-20,19,Shipped

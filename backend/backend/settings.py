@@ -41,7 +41,7 @@ ROOT_URLCONF = 'backend.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'core/templates')],  # Add your templates directory here
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -53,6 +53,7 @@ TEMPLATES = [
         },
     },
 ]
+
 
 WSGI_APPLICATION = 'backend.wsgi.application'
 
@@ -95,8 +96,7 @@ STATICFILES_DIRS = [
 
 # Media files (for uploads)
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'core/static/uploads')  # Ensure this is where your uploads are stored
-
+MEDIA_ROOT = os.path.join(BASE_DIR, 'core/static/')  # Ensure this is where your uploads are stored
 # Create the uploads directory if it does not exist
 if not os.path.exists(MEDIA_ROOT):
     os.makedirs(MEDIA_ROOT)
