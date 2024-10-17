@@ -1,15 +1,36 @@
-<!-- templates/mongo_home.html -->
-{% extends "base.html" %}
-
-{% block title %}
-    MongoDB Home
-{% endblock %}
+{% extends 'base.html' %}
 
 {% block content %}
-    <h3>Database Management Home</h3>
+<h1>MongoDB Management</h1>
 
-    <div class="container">
-        {% include 'mongo/connection_form.html' %}  <!-- Include the connection form -->
-        {% include 'mongo/view_database.html' %}  
-    </div>
+<!-- Connection Form -->
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Connect</button>
+</form>
+
+{% if connection_error %}
+<p style="color:red;">{{ connection_error }}</p>
+{% endif %}
+
+<!-- Create Database Form -->
+<h2>Create a New Database and Collection</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ create_db_form.as_p }}
+    <button type="submit" name="create_db">Create</button>
+</form>
+
+{% if create_db_error %}
+<p style="color:red;">{{ create_db_error }}</p>
+{% endif %}
+
+<!-- List Databases -->
+<h2>Available Databases</h2>
+<ul>
+    {% for database in databases %}
+        <li>{{ database }}</li>
+    {% endfor %}
+</ul>
 {% endblock %}

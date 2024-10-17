@@ -70,13 +70,14 @@ def connect_to_mongo(host, port):
         return None
 
 
-
-
 @login_required
 def mongo_home(request):
     """Render the MongoDB management home page."""
     databases = []
     connection_error = None
+    create_db_error = None
+    host = 'localhost'
+    port = 27017
 
     if request.method == 'POST':
         form = MongoDBConnectionForm(request.POST)
@@ -84,21 +85,41 @@ def mongo_home(request):
             host = form.cleaned_data['host']
             port = form.cleaned_data['port']
 
-
             mongo_client = connect_to_mongo(host, port)
             if mongo_client:
                 databases = mongo_client.list_database_names()
-                mongo_client.close()
             else:
                 connection_error = "Failed to connect to MongoDB. Please check your credentials."
-
     else:
         form = MongoDBConnectionForm()
 
+    # Handle database and collection creation
+    if request.method == 'POST' and 'create_db' in request.POST:
+        create_db_form = CreateDatabaseForm(request.POST)
+        if create_db_form.is_valid():
+            database_name = create_db_form.cleaned_data['database_name']
+            collection_name = create_db_form.cleaned_data['collection_name']
+
+            mongo_client = connect_to_mongo(host, port)
+            if mongo_client:
+                # Create the database and collection
+                db = mongo_client[database_name]
+                db.create_collection(collection_name)
+
+                # List updated databases
+                databases = mongo_client.list_database_names()
+            else:
+                create_db_error = "Failed to connect to MongoDB. Please check your credentials."
+
+    else:
+        create_db_form = CreateDatabaseForm()
+
     return render(request, 'mongo_home.html', {
         'form': form,
+        'create_db_form': create_db_form,
         'databases': databases,
         'connection_error': connection_error,
+        'create_db_error': create_db_error,
     })
 
 
