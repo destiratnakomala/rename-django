@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Database: {{ db_name }}</h1>
+
+<!-- Display collections in the selected database with delete and view buttons -->
+<h2>Collections</h2>
+<ul>
+    {% if collections %}
+        {% for collection in collections %}
+            <li>
+                {{ collection }}
+                <form method="post" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" name="delete_collection" value="{{ collection }}">Delete</button>
+                </form>
+                <form method="post" enctype="multipart/form-data" style="display:inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="collection_name" value="{{ collection }}">
+                    <input type="file" name="upload_file" accept=".csv,.xls,.xlsx,.txt" required>
+                    <button type="submit" name="upload_file">Upload</button>
+                </form>
+                <!-- View button for the collection -->
+                <a href="{% url 'view_collection_data' db_name=db_name collection_name=collection %}">
+                    <button>View</button>
+                </a>
+            </li>
+        {% endfor %}
+    {% else %}
+        <p>No collections found in this database.</p>
+    {% endif %}
+</ul>
+
+<!-- Add Collection Form -->
+<h2>Add a New Collection</h2>
+<form method="post">
+    {% csrf_token %}
+    <input type="text" name="new_collection_name" placeholder="Collection Name" required>
+    <button type="submit" name="add_collection">Add Collection</button>
+</form>
+
+{% if connection_error %}
+    <p style="color:red;">{{ connection_error }}</p>
+{% endif %}
+
+<!-- Button to return to MongoDB Management home -->
+<a href="{% url 'mongo_home' %}">
+    <button>Back to MongoDB Management</button>
+</a>
+
+{% endblock %}

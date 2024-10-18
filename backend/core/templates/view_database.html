@@ -1,0 +1,24 @@
+<!-- templates/mongo/view_database.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Data in Collection</h2>
+<table>
+    <thead>
+        <tr>
+            {% for key in data.0.keys %}
+                <th>{{ key }}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in data %}
+            <tr>
+                {% for value in item.values %}
+                    <td>{{ value }}</td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

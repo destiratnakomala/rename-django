@@ -11,7 +11,7 @@
 </form>
 
 {% if connection_error %}
-<p style="color:red;">{{ connection_error }}</p>
+    <p style="color:red;">{{ connection_error }}</p>
 {% endif %}
 
 <!-- Create Database Form -->
@@ -23,14 +23,21 @@
 </form>
 
 {% if create_db_error %}
-<p style="color:red;">{{ create_db_error }}</p>
+    <p style="color:red;">{{ create_db_error }}</p>
 {% endif %}
 
 <!-- List Databases -->
 <h2>Available Databases</h2>
 <ul>
     {% for database in databases %}
-        <li>{{ database }}</li>
+        <li>
+            {{ database }}
+            <form method="post" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" name="view_db" value="{{ database }}">View</button>
+                <button type="submit" name="delete_db" value="{{ database }}">Delete</button>
+            </form>
+        </li>
     {% endfor %}
 </ul>
 {% endblock %}

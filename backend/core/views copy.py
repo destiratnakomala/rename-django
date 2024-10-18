@@ -14,8 +14,6 @@ from pymongo.errors import ConnectionFailure
 from pymongo import MongoClient
 from .forms import MongoDBConnectionForm, CreateDatabaseForm
 from .form import UploadFileForm
-from django.core.files.storage import FileSystemStorage
-from django.contrib import messages
 
 
 
@@ -112,26 +110,9 @@ def mongo_home(request):
                 databases = mongo_client.list_database_names()
             else:
                 create_db_error = "Failed to connect to MongoDB. Please check your credentials."
+
     else:
         create_db_form = CreateDatabaseForm()
-
-    # Handle database viewing
-    if request.method == 'POST' and 'view_db' in request.POST:
-        db_name = request.POST.get('view_db')
-        # Redirect to the view database page, you can create a new view to show collections
-        return redirect('view_database', db_name=db_name)
-
-    # Handle database deletion
-    if request.method == 'POST' and 'delete_db' in request.POST:
-        db_name = request.POST.get('delete_db')
-
-        mongo_client = connect_to_mongo(host, port)
-        if mongo_client:
-            # Drop the selected database
-            mongo_client.drop_database(db_name)
-
-            # List updated databases after deletion
-            databases = mongo_client.list_database_names()
 
     return render(request, 'mongo_home.html', {
         'form': form,
@@ -140,95 +121,6 @@ def mongo_home(request):
         'connection_error': connection_error,
         'create_db_error': create_db_error,
     })
-
-@login_required
-def view_database(request, db_name):
-    """View collections inside a specific database and handle collection deletion."""
-    collections = []
-    connection_error = None
-    host = 'localhost'
-    port = 27017
-
-    # Connect to MongoDB
-    mongo_client = connect_to_mongo(host, port)
-    if mongo_client:
-        db = mongo_client[db_name]
-        collections = db.list_collection_names()
-
-        # Handle collection deletion
-        if request.method == 'POST' and 'delete_collection' in request.POST:
-            collection_name = request.POST.get('delete_collection')
-            if collection_name in collections:
-                db.drop_collection(collection_name)
-                # Refresh the list of collections after deletion
-                collections = db.list_collection_names()
-
-                # Handle collection addition
-        if request.method == 'POST' and 'add_collection' in request.POST:
-            new_collection_name = request.POST.get('new_collection_name')
-            if new_collection_name:
-                db.create_collection(new_collection_name)
-                # Refresh the list of collections after addition
-                collections = db.list_collection_names()
-
-        # Handle file upload
-        if request.method == 'POST' and 'upload_file' in request.FILES:
-            uploaded_file = request.FILES['upload_file']
-            if uploaded_file.name.endswith('.csv'):
-                df = pd.read_csv(uploaded_file)
-            elif uploaded_file.name.endswith(('.xls', '.xlsx')):
-                df = pd.read_excel(uploaded_file)
-            elif uploaded_file.name.endswith('.txt'):
-                df = pd.read_csv(uploaded_file, delimiter='\t')
-            else:
-                messages.error(request, 'Unsupported file format. Please upload a CSV, XLS, XLSX, or TXT file.')
-                return redirect('view_database', db_name=db_name)
-
-            # Insert DataFrame into MongoDB collection
-            collection_name = request.POST.get('collection_name')  # Get the target collection name from form
-            if collection_name in collections:
-                db[collection_name].insert_many(df.to_dict('records'))  # Convert DataFrame to dict and insert
-                messages.success(request, f'Successfully uploaded {uploaded_file.name} to {collection_name}.')
-
-
-    else:
-        connection_error = "Failed to connect to MongoDB."
-
-    return render(request, 'view_database_list.html', {
-        'db_name': db_name,
-        'collections': collections,
-        'connection_error': connection_error,
-    })
-
-
-
-@login_required
-def view_collection_data(request, db_name, collection_name):
-    """View documents inside a specific collection."""
-    documents = []
-    connection_error = None
-    host = 'localhost'
-    port = 27017
-
-    # Connect to MongoDB
-    mongo_client = connect_to_mongo(host, port)
-    if mongo_client:
-        db = mongo_client[db_name]
-        documents = list(db[collection_name].find())  # Fetch all documents from the collection
-    else:
-        connection_error = "Failed to connect to MongoDB."
-
-    return render(request, 'view_collection_data.html', {
-        'db_name': db_name,
-        'collection_name': collection_name,
-        'documents': documents,
-        'connection_error': connection_error,
-    })
-
-
-
-
-
 
 
 

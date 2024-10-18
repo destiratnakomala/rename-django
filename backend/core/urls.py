@@ -1,6 +1,9 @@
 from django.urls import path
 from .views import ( home, register, user_login, user_logout, upload_file, view_files, view_file_contents, view_selected_files, manipulate_data, get_common_columns, data_submission,view_manipulation_result 
-                    ,mongo_home
+                    ,mongo_home, 
+                    view_database, 
+                    view_collection_data
+
                     
     )
 
@@ -16,6 +19,10 @@ urlpatterns = [
     path('get_common_columns/', get_common_columns, name='get_common_columns'),
     path('view_manipulation_result/', view_manipulation_result, name= 'view_manipulation_result'),
     path('mongo/', mongo_home, name='mongo_home'),
+    path('view_database/<str:db_name>/', view_database, name='view_database'),
+    path('view_collection/<str:db_name>/<str:collection_name>/', view_collection_data, name='view_collection_data'),
+
+
 
 ]
 

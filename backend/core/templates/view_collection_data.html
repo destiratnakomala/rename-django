@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Collection: {{ collection_name }}</h1>
+
+<!-- Display documents in the selected collection -->
+<h2>Documents</h2>
+{% if documents %}
+    <table>
+        <thead>
+            <tr>
+                {% for key in documents.0.keys %}
+                    <th>{{ key }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for document in documents %}
+                <tr>
+                    {% for value in document.values %}
+                        <td>{{ value }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>No documents found in this collection.</p>
+{% endif %}
+
+<!-- Button to return to the collection view -->
+<a href="{% url 'view_database' db_name=db_name %}">
+    <button>Back to Collection View</button>
+</a>
+
+{% if connection_error %}
+    <p style="color:red;">{{ connection_error }}</p>
+{% endif %}
+
+{% endblock %}
