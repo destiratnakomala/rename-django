@@ -21,6 +21,7 @@ urlpatterns = [
     path('mongo/', mongo_home, name='mongo_home'),
     path('view_database/<str:db_name>/', view_database, name='view_database'),
     path('view_collection/<str:db_name>/<str:collection_name>/', view_collection_data, name='view_collection_data'),
+    
 
 
 

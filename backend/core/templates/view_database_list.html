@@ -3,7 +3,7 @@
 {% block content %}
 <h1>Database: {{ db_name }}</h1>
 
-<!-- Display collections in the selected database with delete and view buttons -->
+<!-- Display collections in the selected database with delete, view, and upload buttons -->
 <h2>Collections</h2>
 <ul>
     {% if collections %}
@@ -38,6 +38,27 @@
     <input type="text" name="new_collection_name" placeholder="Collection Name" required>
     <button type="submit" name="add_collection">Add Collection</button>
 </form>
+
+<!-- Join Collections Form -->
+<!-- Join Collections Form -->
+<h2>Join Collections</h2>
+<form method="post">
+    {% csrf_token %}
+    <label for="new_collection_name_join">New Collection Name:</label>
+    <input type="text" name="new_collection_name_join" placeholder="New Collection Name" required>
+    <br>
+    <label for="common_field">Common Field:</label>
+    <input type="text" name="common_field" placeholder="Common Field" required>
+    <br>
+    <label>Select Collections to Join:</label>
+    <br>
+    {% for collection in collections %}
+        <input type="checkbox" name="selected_collections" value="{{ collection }}"> {{ collection }}
+        <br>
+    {% endfor %}
+    <button type="submit" name="join_collections">Join Collections</button>
+</form>
+
 
 {% if connection_error %}
     <p style="color:red;">{{ connection_error }}</p>

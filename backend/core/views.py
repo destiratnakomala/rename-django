@@ -191,6 +191,33 @@ def view_database(request, db_name):
                 messages.success(request, f'Successfully uploaded {uploaded_file.name} to {collection_name}.')
 
 
+        # Handle join operation
+        if request.method == 'POST' and 'join_collections' in request.POST:
+            selected_collections = request.POST.getlist('selected_collections')
+            new_collection_name = request.POST.get('new_collection_name_join')
+            common_field = request.POST.get('common_field')
+
+            if len(selected_collections) < 2:
+                messages.error(request, 'Please select at least two collections to join.')
+                return redirect('view_database', db_name=db_name)
+
+            # Perform the join operation
+            dataframes = []
+            for collection in selected_collections:
+                df = pd.DataFrame(list(db[collection].find()))
+                dataframes.append(df)
+
+            # Example of merging dataframes (you can customize the join logic as needed)
+            if dataframes:
+                merged_df = dataframes[0]
+                for df in dataframes[1:]:
+                    merged_df = pd.merge(merged_df, df, on=common_field, how='inner')  # Adjust based on your join logic
+
+                # Create a new collection with merged data
+                db[new_collection_name].insert_many(merged_df.to_dict('records'))
+                messages.success(request, f'Successfully joined collections into {new_collection_name}.')
+
+
     else:
         connection_error = "Failed to connect to MongoDB."
 
@@ -224,12 +251,6 @@ def view_collection_data(request, db_name, collection_name):
         'documents': documents,
         'connection_error': connection_error,
     })
-
-
-
-
-
-
 
 
 
