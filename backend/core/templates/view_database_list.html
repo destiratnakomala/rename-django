@@ -39,9 +39,9 @@
     <button type="submit" name="add_collection">Add Collection</button>
 </form>
 
+
 <!-- Join Collections Form -->
-<!-- Join Collections Form -->
-<h2>Join Collections</h2>
+<h2>Combine Collections</h2>
 <form method="post">
     {% csrf_token %}
     <label for="new_collection_name_join">New Collection Name:</label>
@@ -50,14 +50,25 @@
     <label for="common_field">Common Field:</label>
     <input type="text" name="common_field" placeholder="Common Field" required>
     <br>
-    <label>Select Collections to Join:</label>
+    <label for="join_type">Join Type:</label>
+    <input type="text" name="join_type" placeholder="join_type">
+    <br>
+    <label>Select Operation:</label>
+    <select name="operation_type">
+        <option value="merge">Merge</option>
+        <option value="join">Join</option>
+        <option value="combine">Combine</option>
+    </select>
+    <br>
+    <label>Select Collections to Combine:</label>
     <br>
     {% for collection in collections %}
         <input type="checkbox" name="selected_collections" value="{{ collection }}"> {{ collection }}
         <br>
     {% endfor %}
-    <button type="submit" name="join_collections">Join Collections</button>
+    <button type="submit" name="combine_collections">Combine Collections</button>
 </form>
+
 
 
 {% if connection_error %}

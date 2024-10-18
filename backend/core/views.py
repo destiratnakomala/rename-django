@@ -16,6 +16,7 @@ from .forms import MongoDBConnectionForm, CreateDatabaseForm
 from .form import UploadFileForm
 from django.core.files.storage import FileSystemStorage
 from django.contrib import messages
+from pymongo.errors import BulkWriteError
 
 
 
@@ -172,51 +173,87 @@ def view_database(request, db_name):
                 collections = db.list_collection_names()
 
         # Handle file upload
+        # Handle file upload
         if request.method == 'POST' and 'upload_file' in request.FILES:
             uploaded_file = request.FILES['upload_file']
-            if uploaded_file.name.endswith('.csv'):
-                df = pd.read_csv(uploaded_file)
-            elif uploaded_file.name.endswith(('.xls', '.xlsx')):
-                df = pd.read_excel(uploaded_file)
-            elif uploaded_file.name.endswith('.txt'):
-                df = pd.read_csv(uploaded_file, delimiter='\t')
-            else:
-                messages.error(request, 'Unsupported file format. Please upload a CSV, XLS, XLSX, or TXT file.')
+            collection_name = request.POST.get('collection_name')
+
+            if collection_name not in collections:
+                messages.error(request, 'Please select a valid collection to upload to.')
                 return redirect('view_database', db_name=db_name)
 
-            # Insert DataFrame into MongoDB collection
-            collection_name = request.POST.get('collection_name')  # Get the target collection name from form
-            if collection_name in collections:
-                db[collection_name].insert_many(df.to_dict('records'))  # Convert DataFrame to dict and insert
+            try:
+                if uploaded_file.name.endswith('.csv'):
+                    df = pd.read_csv(uploaded_file)
+                elif uploaded_file.name.endswith(('.xls', '.xlsx')):
+                    df = pd.read_excel(uploaded_file)
+                elif uploaded_file.name.endswith('.txt'):
+                    df = pd.read_csv(uploaded_file, delimiter='\t')
+                else:
+                    messages.error(request, 'Unsupported file format. Please upload a CSV, XLS, XLSX, or TXT file.')
+                    return redirect('view_database', db_name=db_name)
+
+                # Handle NaN or duplicate '_id' values
+                if '_id' in df.columns:
+                    df = df.dropna(subset=['_id'])  # Drop rows with NaN in '_id'
+                    if df['_id'].duplicated().any():
+                        messages.error(request, 'Duplicate _id values detected. Please ensure unique _id values.')
+                        return redirect('view_database', db_name=db_name)
+
+                # Insert DataFrame into MongoDB collection
+                db[collection_name].insert_many(df.to_dict('records'))
                 messages.success(request, f'Successfully uploaded {uploaded_file.name} to {collection_name}.')
 
-
-        # Handle join operation
-        if request.method == 'POST' and 'join_collections' in request.POST:
-            selected_collections = request.POST.getlist('selected_collections')
-            new_collection_name = request.POST.get('new_collection_name_join')
-            common_field = request.POST.get('common_field')
-
-            if len(selected_collections) < 2:
-                messages.error(request, 'Please select at least two collections to join.')
+            except Exception as e:
+                messages.error(request, f'Error processing the uploaded file: {e}')
                 return redirect('view_database', db_name=db_name)
 
-            # Perform the join operation
+
+
+        # Handle combine operation
+        if request.method == 'POST' and 'combine_collections' in request.POST:
+            selected_collections = request.POST.getlist('selected_collections')
+            new_collection_name = request.POST.get('new_collection_name_join')
+            common_field = request.POST.get('common_field')  # Get the common field from the form
+            join_type = request.POST.get('join_type')  # Get the common field from the form
+
+            operation_type = request.POST.get('operation_type')  # Get the selected operation type
+
+            if len(selected_collections) < 2:
+                messages.error(request, 'Please select at least two collections to combine.')
+                return redirect('view_database', db_name=db_name)
+
+            # Perform the selected operation
             dataframes = []
             for collection in selected_collections:
                 df = pd.DataFrame(list(db[collection].find()))
                 dataframes.append(df)
 
-            # Example of merging dataframes (you can customize the join logic as needed)
+                if '_id' in df.columns:
+                    df = df.dropna(subset=['_id'])  # Drop rows with NaN in '_id'
+                    if df['_id'].duplicated().any():
+                        messages.error(request, 'Duplicate _id values detected. Please ensure unique _id values.')
+                        return redirect('view_database', db_name=db_name)
+
+
             if dataframes:
-                merged_df = dataframes[0]
-                for df in dataframes[1:]:
-                    merged_df = pd.merge(merged_df, df, on=common_field, how='inner')  # Adjust based on your join logic
+                if operation_type == 'merge':
+                    merged_df = pd.concat(dataframes, axis=0)
+                      # Vertical stack
+                elif operation_type == 'join':
+                    merged_df = dataframes[0]
+                    for df in dataframes[1:]:
+                        merged_df = pd.merge(merged_df, df, on=common_field, how=join_type)  # Inner join
+                elif operation_type == 'combine':
+                    merged_df = dataframes[0]
+                    for df in dataframes[1:]:
+                        merged_df = pd.concat([merged_df, df], axis=1)  # Horizontal combine
+                            # Handle NaN or duplicate '_id' values
 
-                # Create a new collection with merged data
+
+                # Create a new collection with the merged or combined data
                 db[new_collection_name].insert_many(merged_df.to_dict('records'))
-                messages.success(request, f'Successfully joined collections into {new_collection_name}.')
-
+                messages.success(request, f'Successfully combined collections into {new_collection_name}.')
 
     else:
         connection_error = "Failed to connect to MongoDB."
