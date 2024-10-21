@@ -9,10 +9,10 @@
     {% if collections %}
         {% for collection in collections %}
             <li>
-                {{ collection }}
+                <strong>{{ collection }}</strong>
                 <form method="post" style="display:inline;">
                     {% csrf_token %}
-                    <button type="submit" name="delete_collection" value="{{ collection }}">Delete</button>
+                    <button type="submit" name="delete_collection" value="{{ collection }}" onclick="return confirm('Are you sure you want to delete this collection?');">Delete</button>
                 </form>
                 <form method="post" enctype="multipart/form-data" style="display:inline;">
                     {% csrf_token %}
@@ -23,6 +23,10 @@
                 <!-- View button for the collection -->
                 <a href="{% url 'view_collection_data' db_name=db_name collection_name=collection %}">
                     <button>View</button>
+                </a>
+                <!-- ETL button for the collection -->
+                <a href="{% url 'etl_operations' db_name=db_name collection_name=collection %}">
+                    <button>ETL</button>
                 </a>
             </li>
         {% endfor %}
@@ -35,45 +39,42 @@
 <h2>Add a New Collection</h2>
 <form method="post">
     {% csrf_token %}
-    <input type="text" name="new_collection_name" placeholder="Collection Name" required>
+    <label for="new_collection_name">Collection Name:</label>
+    <input type="text" id="new_collection_name" name="new_collection_name" placeholder="Enter new collection name" required>
     <button type="submit" name="add_collection">Add Collection</button>
 </form>
 
-
-<!-- Join Collections Form -->
+<!-- Combine Collections Form -->
 <h2>Combine Collections</h2>
 <form method="post">
     {% csrf_token %}
-    <label for="new_collection_name_join">New Collection Name:</label>
-    <input type="text" name="new_collection_name_join" placeholder="New Collection Name" required>
-    <br>
-    <label for="common_field">Common Field:</label>
-    <input type="text" name="common_field" placeholder="Common Field" required>
-    <br>
-    <label for="join_type">Join Type:</label>
-    <input type="text" name="join_type" placeholder="join_type">
-    <br>
     <label>Select Operation:</label>
     <select name="operation_type">
         <option value="merge">Merge</option>
         <option value="join">Join</option>
         <option value="combine">Combine</option>
     </select>
-    <br>
+    <label for="new_collection_name_join">New Collection Name:</label>
+    <input type="text" id="new_collection_name_join" name="new_collection_name_join" placeholder="New Collection Name" required>
+    
+    <label for="common_field">Common Field:</label>
+    <input type="text" id="common_field" name="common_field" placeholder="Common Field" required>
+    
+    <label for="join_type">Join Type:</label>
+    <input type="text" id="join_type" name="join_type" placeholder="Join Type (e.g., Inner, Outer)">
+    
+
+    
     <label>Select Collections to Combine:</label>
-    <br>
-    {% for collection in collections %}
-        <input type="checkbox" name="selected_collections" value="{{ collection }}"> {{ collection }}
-        <br>
-    {% endfor %}
+    <div>
+        {% for collection in collections %}
+            <input type="checkbox" name="selected_collections" value="{{ collection }}"> {{ collection }}
+            <br>
+        {% endfor %}
+    </div>
+    
     <button type="submit" name="combine_collections">Combine Collections</button>
 </form>
-
-
-
-{% if connection_error %}
-    <p style="color:red;">{{ connection_error }}</p>
-{% endif %}
 
 <!-- Button to return to MongoDB Management home -->
 <a href="{% url 'mongo_home' %}">

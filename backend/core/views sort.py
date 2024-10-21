@@ -14,6 +14,9 @@ from pymongo.errors import ConnectionFailure
 from pymongo import MongoClient
 from .forms import MongoDBConnectionForm, CreateDatabaseForm
 from .form import UploadFileForm
+from django.core.files.storage import FileSystemStorage
+from django.contrib import messages
+from pymongo.errors import BulkWriteError
 
 
 
@@ -110,9 +113,26 @@ def mongo_home(request):
                 databases = mongo_client.list_database_names()
             else:
                 create_db_error = "Failed to connect to MongoDB. Please check your credentials."
-
     else:
         create_db_form = CreateDatabaseForm()
+
+    # Handle database viewing
+    if request.method == 'POST' and 'view_db' in request.POST:
+        db_name = request.POST.get('view_db')
+        # Redirect to the view database page, you can create a new view to show collections
+        return redirect('view_database', db_name=db_name)
+
+    # Handle database deletion
+    if request.method == 'POST' and 'delete_db' in request.POST:
+        db_name = request.POST.get('delete_db')
+
+        mongo_client = connect_to_mongo(host, port)
+        if mongo_client:
+            # Drop the selected database
+            mongo_client.drop_database(db_name)
+
+            # List updated databases after deletion
+            databases = mongo_client.list_database_names()
 
     return render(request, 'mongo_home.html', {
         'form': form,
@@ -122,6 +142,151 @@ def mongo_home(request):
         'create_db_error': create_db_error,
     })
 
+@login_required
+def view_database(request, db_name):
+    """View collections inside a specific database and handle collection deletion."""
+    collections = []
+    connection_error = None
+    host = 'localhost'
+    port = 27017
+
+    # Connect to MongoDB
+    mongo_client = connect_to_mongo(host, port)
+    if mongo_client:
+        db = mongo_client[db_name]
+        collections = db.list_collection_names()
+
+        # Handle collection deletion
+        if request.method == 'POST' and 'delete_collection' in request.POST:
+            collection_name = request.POST.get('delete_collection')
+            if collection_name in collections:
+                db.drop_collection(collection_name)
+                # Refresh the list of collections after deletion
+                collections = db.list_collection_names()
+
+                # Handle collection addition
+        if request.method == 'POST' and 'add_collection' in request.POST:
+            new_collection_name = request.POST.get('new_collection_name')
+            if new_collection_name:
+                db.create_collection(new_collection_name)
+                # Refresh the list of collections after addition
+                collections = db.list_collection_names()
+
+        # Handle file upload
+        if request.method == 'POST' and 'upload_file' in request.FILES:
+            uploaded_file = request.FILES['upload_file']
+            collection_name = request.POST.get('collection_name')
+
+            if collection_name not in collections:
+                messages.error(request, 'Please select a valid collection to upload to.')
+                return redirect('view_database', db_name=db_name)
+
+            try:
+                if uploaded_file.name.endswith('.csv'):
+                    df = pd.read_csv(uploaded_file)
+                elif uploaded_file.name.endswith(('.xls', '.xlsx')):
+                    df = pd.read_excel(uploaded_file)
+                elif uploaded_file.name.endswith('.txt'):
+                    df = pd.read_csv(uploaded_file, delimiter='\t')
+                else:
+                    messages.error(request, 'Unsupported file format. Please upload a CSV, XLS, XLSX, or TXT file.')
+                    return redirect('view_database', db_name=db_name)
+
+                # Handle NaN or duplicate '_id' values
+                if '_id' in df.columns:
+                    df['_id'] = df['_id'].where(pd.notnull(df['_id']), None)
+                    if df['_id'].duplicated().any():
+                        messages.error(request, 'Duplicate _id values detected. Please ensure unique _id values.')
+                        return redirect('view_database', db_name=db_name)
+
+                # Insert DataFrame into MongoDB collection
+                db[collection_name].insert_many(df.to_dict('records'))
+                messages.success(request, f'Successfully uploaded {uploaded_file.name} to {collection_name}.')
+
+            except Exception as e:
+                messages.error(request, f'Error processing the uploaded file: {e}')
+                return redirect('view_database', db_name=db_name)
+
+
+
+        # Handle combine operation
+        if request.method == 'POST' and 'combine_collections' in request.POST:
+            selected_collections = request.POST.getlist('selected_collections')
+            new_collection_name = request.POST.get('new_collection_name_join')
+            common_field = request.POST.get('common_field')  # Get the common field from the form
+
+            operation_type = request.POST.get('operation_type')  # Get the selected operation type
+
+            if len(selected_collections) < 2:
+                messages.error(request, 'Please select at least two collections to combine.')
+                return redirect('view_database', db_name=db_name)
+
+            # Perform the selected operation
+            dataframes = []
+            for collection in selected_collections:
+                df = pd.DataFrame(list(db[collection].find()))
+                dataframes.append(df)
+
+                if '_id' in df.columns:
+                    df = df.dropna(subset=['_id'])  # Drop rows with NaN in '_id'
+                    if df['_id'].duplicated().any():
+                        messages.error(request, 'Duplicate _id values detected. Please ensure unique _id values.')
+                        return redirect('view_database', db_name=db_name)
+
+
+            if dataframes:
+                if operation_type == 'merge':
+                    merged_df = pd.concat(dataframes, axis=0)
+                      # Vertical stack
+                elif operation_type == 'join':
+                    join_type = request.POST.get('join_type')  # Get the common field from the form
+                    merged_df = dataframes[0]
+                    for df in dataframes[1:]:
+                        merged_df = pd.merge(merged_df, df, on=common_field, how=join_type)  # Inner join
+                elif operation_type == 'combine':
+                    merged_df = dataframes[0]
+                    for df in dataframes[1:]:
+                        merged_df = pd.concat([merged_df, df], axis=1)  # Horizontal combine
+                            # Handle NaN or duplicate '_id' values
+
+
+                # Create a new collection with the merged or combined data
+                db[new_collection_name].insert_many(merged_df.to_dict('records'))
+                messages.success(request, f'Successfully combined collections into {new_collection_name}.')
+
+    else:
+        connection_error = "Failed to connect to MongoDB."
+
+    return render(request, 'view_database_list.html', {
+        'db_name': db_name,
+        'collections': collections,
+        'connection_error': connection_error,
+    })
+
+
+
+@login_required
+def view_collection_data(request, db_name, collection_name):
+    """View documents inside a specific collection."""
+    documents = []
+    connection_error = None
+    host = 'localhost'
+    port = 27017
+
+    # Connect to MongoDB
+    mongo_client = connect_to_mongo(host, port)
+    if mongo_client:
+        db = mongo_client[db_name]
+        documents = list(db[collection_name].find())  # Fetch all documents from the collection
+    else:
+        connection_error = "Failed to connect to MongoDB."
+
+    return render(request, 'view_collection_data.html', {
+        'db_name': db_name,
+        'collection_name': collection_name,
+        'documents': documents,
+        'connection_error': connection_error,
+    })
 
 
 
@@ -129,8 +294,84 @@ def mongo_home(request):
 #------------------------DATABASE END 
 
 
+#--------------------ETL button----------------
+@login_required
+def etl_operations(request, db_name, collection_name):
+    """Handle ETL operations on the specified collection."""
+    connection_error = None
+    host = 'localhost'
+    port = 27017
 
+    # Connect to MongoDB
+    mongo_client = connect_to_mongo(host, port)
+    if mongo_client:
+        db = mongo_client[db_name]
+        collection = db[collection_name]
+        data = []
 
+        # Fetch initial data for debugging
+        initial_data = list(collection.find())
+        print("Initial Data:", initial_data)
+
+        if request.method == 'POST':
+            operation_type = request.POST.get('operation_type')
+
+            if operation_type == 'remove_duplicates':
+                # Fetch all documents to process
+                all_docs = list(collection.find())
+                
+                if all_docs:
+                    unique_docs = {}
+                    
+                    # Use a tuple of keys that define uniqueness
+                    for doc in all_docs:
+                        unique_key = (doc.get('OrderID'), doc.get('CustomerID'))  # Adjust the keys as needed
+
+                        # Store the first occurrence of the document
+                        if unique_key not in unique_docs:
+                            unique_docs[unique_key] = doc
+
+                    # Clear the existing collection and insert unique documents back
+                    collection.delete_many({})
+                    collection.insert_many(unique_docs.values())
+
+                    messages.success(request, 'Duplicates removed successfully.')
+                else:
+                    messages.error(request, 'No documents found in the collection.')
+
+            elif operation_type == 'sort_documents':
+                sort_field = request.POST.get('sort_field')
+                sort_order = 1 if request.POST.get('sort_order') == 'asc' else -1
+
+                # Save sort parameters in session
+                request.session['sort_field'] = sort_field
+                request.session['sort_order'] = 'asc' if sort_order == 1 else 'desc'
+
+                # Fetch sorted data
+                data = list(collection.find().sort(sort_field, sort_order))
+                messages.success(request, f'Sorted documents by {sort_field} in {"ascending" if sort_order == 1 else "descending"} order.')
+
+            # Fetch the current data from the collection after the operation
+            data = list(collection.find()) if not data else data
+        else:
+            data = list(collection.find())
+
+            # Apply sorting if sort parameters exist in the session
+            sort_field = request.session.get('sort_field')
+            sort_order = request.session.get('sort_order')
+            if sort_field and sort_order:
+                order = 1 if sort_order == 'asc' else -1
+                data = list(collection.find().sort(sort_field, order))
+
+    else:
+        connection_error = "Failed to connect to MongoDB."
+
+    return render(request, 'etl_operations.html', {
+        'db_name': db_name,
+        'collection_name': collection_name,
+        'data': data,
+        'connection_error': connection_error,
+    })
 
 
 @login_required

@@ -173,7 +173,6 @@ def view_database(request, db_name):
                 collections = db.list_collection_names()
 
         # Handle file upload
-        # Handle file upload
         if request.method == 'POST' and 'upload_file' in request.FILES:
             uploaded_file = request.FILES['upload_file']
             collection_name = request.POST.get('collection_name')
@@ -215,7 +214,6 @@ def view_database(request, db_name):
             selected_collections = request.POST.getlist('selected_collections')
             new_collection_name = request.POST.get('new_collection_name_join')
             common_field = request.POST.get('common_field')  # Get the common field from the form
-            join_type = request.POST.get('join_type')  # Get the common field from the form
 
             operation_type = request.POST.get('operation_type')  # Get the selected operation type
 
@@ -241,6 +239,7 @@ def view_database(request, db_name):
                     merged_df = pd.concat(dataframes, axis=0)
                       # Vertical stack
                 elif operation_type == 'join':
+                    join_type = request.POST.get('join_type')  # Get the common field from the form
                     merged_df = dataframes[0]
                     for df in dataframes[1:]:
                         merged_df = pd.merge(merged_df, df, on=common_field, how=join_type)  # Inner join
@@ -295,8 +294,81 @@ def view_collection_data(request, db_name, collection_name):
 #------------------------DATABASE END 
 
 
+#--------------------ETL button----------------
+@login_required
+def etl_operations(request, db_name, collection_name):
+    """Handle ETL operations on the specified collection."""
+    connection_error = None
+    host = 'localhost'
+    port = 27017
+
+    # Connect to MongoDB
+    mongo_client = connect_to_mongo(host, port)
+    if mongo_client:
+        db = mongo_client[db_name]
+        collection = db[collection_name]
+        data = []  # Initialize data to avoid reference before assignment
+
+        if request.method == 'POST':
+            operation_type = request.POST.get('operation_type')
+
+            # Remove duplicates operation
+            if operation_type == 'remove_duplicates':
+                sample_doc = collection.find_one()
+
+                if sample_doc:
+                    # Create a group key dynamically based on all fields except `_id`
+                    group_key = {key: f"${key}" for key in sample_doc.keys() if key != "_id"}
+
+                    # Logic to remove duplicates
+                    pipeline = [
+                        {
+                            "$group": {
+                                "_id": group_key,  # Group by all fields except `_id`
+                                "doc": {"$first": "$$ROOT"}  # Keep the first occurrence
+                            }
+                        },
+                        {
+                            "$replaceRoot": {"newRoot": "$doc"}  # Replace root with the grouped document
+                        }
+                    ]
+
+                    # Execute the aggregation pipeline
+                    result = list(collection.aggregate(pipeline))
+
+                    # Clear the existing collection and insert unique documents back
+                    collection.delete_many({})
+                    collection.insert_many(result)
+
+                    messages.success(request, 'Duplicates removed successfully.')
+                else:
+                    messages.error(request, 'No documents found in the collection.')
 
 
+
+
+
+            # Additional operations can be added here, e.g., remove_nan, add_column, etc.
+
+            # After the operation, fetch the current data
+            data = list(collection.find())
+
+            # Redirect after successful operation to avoid resubmitting the form on refresh
+            return redirect('etl_operations', db_name=db_name, collection_name=collection_name)
+
+        else:
+            # Fetch the current data when the method is not POST
+            data = list(collection.find())
+
+    else:
+        connection_error = "Failed to connect to MongoDB."
+
+    return render(request, 'etl_operations.html', {
+        'db_name': db_name,
+        'collection_name': collection_name,
+        'data': data,
+        'connection_error': connection_error,
+    })
 
 
 @login_required

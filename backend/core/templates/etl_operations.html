@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>ETL Operations for {{ collection_name }}</h2>
+
+{% if connection_error %}
+    <p style="color:red;">{{ connection_error }}</p>
+{% endif %}
+
+<!-- Display current data -->
+<table>
+    <thead>
+        <tr>
+            {% if data and data.0 %}
+                {% for key in data.0.keys %}
+                    <th>{{ key }}</th>
+                {% endfor %}
+            {% endif %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in data %}
+            <tr>
+                {% for value in item.values %}
+                    <td>{{ value }}</td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- ETL Operations Form -->
+<h3>Select ETL Operation</h3>
+<form method="post">
+    {% csrf_token %}
+    <label for="operation_type">Operation Type:</label>
+    <select name="operation_type" id="operation_type" required>
+        <option value="">Select an operation</option>
+        <option value="remove_duplicates">Remove Duplicates</option>
+        <!-- Add more operation types here -->
+    </select>
+    <br>
+    
+    <!-- Add additional form fields here for specific operations if needed -->
+     
+
+    <button type="submit">Execute Operation</button>
+</form>
+
+<a href="{% url 'view_database' db_name=db_name %}">
+    <button>Back to {{ db_name }} Database</button>
+</a>
+
+{% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+        {% endfor %}
+    </ul>
+{% endif %}
+
+{% endblock %}
