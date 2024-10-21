@@ -195,7 +195,7 @@ def view_database(request, db_name):
 
                 # Handle NaN or duplicate '_id' values
                 if '_id' in df.columns:
-                    df = df.dropna(subset=['_id'])  # Drop rows with NaN in '_id'
+                    df['_id'] = df['_id'].where(pd.notnull(df['_id']), None)
                     if df['_id'].duplicated().any():
                         messages.error(request, 'Duplicate _id values detected. Please ensure unique _id values.')
                         return redirect('view_database', db_name=db_name)
