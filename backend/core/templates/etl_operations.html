@@ -11,10 +11,12 @@
 <table>
     <thead>
         <tr>
-            {% if data and data.0 %}
+            {% if data and data|length > 0 %}
                 {% for key in data.0.keys %}
                     <th>{{ key }}</th>
                 {% endfor %}
+            {% else %}
+                <th>No Data Available</th>
             {% endif %}
         </tr>
     </thead>
@@ -25,6 +27,10 @@
                     <td>{{ value }}</td>
                 {% endfor %}
             </tr>
+        {% empty %}
+            <tr>
+                <td colspan="{{ data.0|length }}">No records found.</td>
+            </tr>
         {% endfor %}
     </tbody>
 </table>
@@ -34,15 +40,23 @@
 <form method="post">
     {% csrf_token %}
     <label for="operation_type">Operation Type:</label>
-    <select name="operation_type" id="operation_type" required>
+    <select name="operation_type" id="operation_type" required onchange="toggleRenameFields()">
         <option value="">Select an operation</option>
         <option value="remove_duplicates">Remove Duplicates</option>
+        <option value="rename_column">Rename Column</option>
         <!-- Add more operation types here -->
     </select>
     <br>
     
-    <!-- Add additional form fields here for specific operations if needed -->
-     
+    <!-- Rename column fields -->
+    <div id="rename-fields" style="display:none;">
+        <label for="old_name">Old Column Name:</label>
+        <input type="text" name="old_name" id="old_name" placeholder="Enter old column name">
+        <br>
+        <label for="new_name">New Column Name:</label>
+        <input type="text" name="new_name" id="new_name" placeholder="Enter new column name">
+        <br>
+    </div>
 
     <button type="submit">Execute Operation</button>
 </form>
@@ -58,5 +72,13 @@
         {% endfor %}
     </ul>
 {% endif %}
+
+<script>
+    function toggleRenameFields() {
+        var operationSelect = document.getElementById('operation_type');
+        var renameFields = document.getElementById('rename-fields');
+        renameFields.style.display = (operationSelect.value === 'rename_column') ? 'block' : 'none';
+    }
+</script>
 
 {% endblock %}

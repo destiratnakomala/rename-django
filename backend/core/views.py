@@ -295,6 +295,9 @@ def view_collection_data(request, db_name, collection_name):
 
 
 #--------------------ETL button----------------
+
+
+
 @login_required
 def etl_operations(request, db_name, collection_name):
     """Handle ETL operations on the specified collection."""
@@ -344,7 +347,14 @@ def etl_operations(request, db_name, collection_name):
                 else:
                     messages.error(request, 'No documents found in the collection.')
 
-
+            elif operation_type== 'rename_column':
+                old_name= request.POST.get('old_name')
+                new_name = request.POST.get('new_name')
+                if old_name and new_name:
+                    rename_column(collection, old_name, new_name)
+                    messages.success(request, f'Column "{old_name}" renamed to "{new_name}".')
+                else:
+                    messages.error(request, 'Both old and new column names must be provided.')
 
 
 
@@ -369,7 +379,12 @@ def etl_operations(request, db_name, collection_name):
         'data': data,
         'connection_error': connection_error,
     })
-
+@login_required
+def rename_column(collection, old_name, new_name):
+    """Rename a specified column in the collection."""
+    collection.update_many({}, {"$rename": {old_name: new_name}})
+    print(f'Column "{old_name}" renamed to "{new_name}".')
+    
 
 @login_required
 def upload_file(request):
