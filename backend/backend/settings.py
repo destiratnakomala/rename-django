@@ -38,6 +38,9 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'backend.urls'
 
+
+ALLOWED_HOSTS = ['.github.dev', 'localhost', 'congenial-succotash-r9qgx9vq974fwq6j.github.dev']
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
